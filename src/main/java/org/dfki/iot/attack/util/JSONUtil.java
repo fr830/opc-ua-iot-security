@@ -1,7 +1,6 @@
 package org.dfki.iot.attack.util;
 
 import java.io.IOException;
-import java.util.Random;
 
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.map.JsonMappingException;
@@ -24,7 +23,14 @@ public class JSONUtil {
 		mapper.enable(SerializationConfig.Feature.INDENT_OUTPUT);
 
 		try {
-			System.out.println(mapper.writeValueAsString(roverClientA1));
+			String text = mapper.writeValueAsString(roverClientA1);
+			System.out.println(text);
+			
+			RoverClientA myObject = mapper.readValue(text, RoverClientA.class);
+			myObject.setClientActive(false);
+			
+			System.out.println(myObject);
+			 
 		} catch (JsonGenerationException e) {
 			// TODO Auto-generated catch block
 			myLogger.info(

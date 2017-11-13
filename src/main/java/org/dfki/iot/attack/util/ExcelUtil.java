@@ -59,7 +59,7 @@ public class ExcelUtil {
 		try {
 
 			
-			FileInputStream excelFile = new FileInputStream(new File("Data.xlsx"));
+			FileInputStream excelFile = new FileInputStream(new File("./src/main/resources/Data.xlsx"));
 			XSSFWorkbook workbook4Read = new XSSFWorkbook(excelFile);
 			XSSFSheet datatypeSheet = workbook4Read.getSheetAt(0);
 			Iterator<Row> iterator = datatypeSheet.iterator();
