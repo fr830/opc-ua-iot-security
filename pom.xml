@@ -32,11 +32,13 @@
 			<version>1.7.7</version>
 			<scope>runtime</scope>
 		</dependency>
+
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpcore-nio</artifactId>
 			<version>4.4.4</version>
 		</dependency>
+
 		<dependency>
 			<groupId>org.bouncycastle</groupId>
 			<artifactId>bcpkix-jdk15on</artifactId>
@@ -47,8 +49,11 @@
 		<!-- <dependency> <groupId>com.opencsv</groupId> <artifactId>opencsv</artifactId> 
 			<version>3.3</version> </dependency> -->
 
-	<!-- <dependency> <groupId>org.apache.poi</groupId> <artifactId>poi</artifactId> 
-		<version>3.9</version> </dependency> -->
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi</artifactId>
+			<version>3.9</version>
+		</dependency>
 
 		<dependency>
 			<groupId>org.apache.poi</groupId>
@@ -107,7 +112,7 @@
 					<archive>
 						<manifest>
 							<!-- Jar file entry point -->
-							<mainClass>org.opcfoundation.ua.examples.Application</mainClass>
+							<mainClass>org.dfki.iot.attack.Application</mainClass>
 						</manifest>
 					</archive>
 				</configuration>
