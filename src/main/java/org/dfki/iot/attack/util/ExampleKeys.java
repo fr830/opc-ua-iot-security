@@ -85,7 +85,7 @@ import org.opcfoundation.ua.utils.CertificateUtils;
  */
 public class ExampleKeys {
 	
-	private static final String PRIVKEY_PASSWORD = "Opc.Ua";
+	private static final String PRIVKEY_PASSWORD = "RoverA";
 
 	/**
 	 * Load file certificate and private key from applicationName.der & .pfx - or create ones if they do not exist

@@ -5,93 +5,93 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.URL;
+import java.util.Date;
 import java.util.Iterator;
 
-import org.apache.poi.ss.format.CellFormat;
-import org.apache.poi.ss.format.CellFormatType;
+import org.apache.poi.hssf.usermodel.HSSFCellStyle;
+import org.apache.poi.hssf.usermodel.HSSFFont;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.dfki.iot.attack.model.RoverClientA;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.dfki.iot.attack.model.RoverAModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ExcelUtil {
-	// Create Logger
+
 	private static final Logger myLogger = LoggerFactory.getLogger(ExcelUtil.class);
 
 	public static void main(String[] args) {
 
-		RoverClientA roverClientA1 = RoverClientA.getRandomRoverClientA();
+		auditRequest("RoverA", JSONUtil.getJSONString(RoverAModel.getRandomRoverClientA()));
+		readFromExcelFile("./src/main/resources/Data.xls", "RoverA");
+	}
 
-		XSSFWorkbook workbook = new XSSFWorkbook();
+	private static void addRowEntryForRoverAModel(Sheet sheet, int rowNumber, RoverAModel roverAModel) {
 
-		XSSFSheet sheet = workbook.createSheet("sheet1");// creating a blank
-															// sheet
-		int rownum = 0;
+		Row row = sheet.createRow(rowNumber);
 
-		Row row = sheet.createRow(rownum++);
-		createRow(roverClientA1, row);
+		Cell cell = row.createCell(0);
+		cell.setCellValue(new Date());
 
+		cell = row.createCell(1);
+		cell.setCellValue(roverAModel.getRequesterIPAddress());
 
-		File directory = new File("./");
-		   System.out.println(directory.getAbsolutePath());
-		   
+		cell = row.createCell(2);
+		cell.setCellValue(roverAModel.getRequesterMACAddress());
+
+		cell = row.createCell(3);
+		cell.setCellValue(roverAModel.getId());
+
+		cell = row.createCell(4);
+		cell.setCellValue(roverAModel.getSpeedSensorData());
+
+		cell = row.createCell(5);
+		cell.setCellValue(roverAModel.getPercentagePowerAvilable());
+
+		cell = row.createCell(6);
+		cell.setCellValue(roverAModel.isClientActive());
+
+		cell = row.createCell(7);
+		cell.setCellValue(roverAModel.getTempSensorData());
+
+	}
+
+	public static void readFromExcelFile(String filePath, String sheetName) {
+
 		try {
-			FileOutputStream out = new FileOutputStream(new File("./src/main/resources/Data.xlsx"), true);
-			workbook.write(out);
-			out.close();
 
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			myLogger.info(
-					"\n LocalizedMessage : " + e.getLocalizedMessage() + "\n  		 Message :: " + e.getMessage()
-							+ "\n toString :: " + e.toString() + "\n:		 StackTrace :: " + e.getStackTrace());
-			e.printStackTrace();
-
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		try {
-
-			
-			FileInputStream excelFile = new FileInputStream(new File("./src/main/resources/Data.xlsx"));
-			XSSFWorkbook workbook4Read = new XSSFWorkbook(excelFile);
-			XSSFSheet datatypeSheet = workbook4Read.getSheetAt(0);
+			FileInputStream excelFile = new FileInputStream(new File(filePath));
+			HSSFWorkbook workbook4Read = new HSSFWorkbook(excelFile);
+			HSSFSheet datatypeSheet = workbook4Read.getSheet(sheetName);
 			Iterator<Row> iterator = datatypeSheet.iterator();
 
 			while (iterator.hasNext()) {
 
 				Row currentRow = iterator.next();
 				Iterator<Cell> cellIterator = currentRow.iterator();
-				RoverClientA roverClientA = new RoverClientA();
 
 				while (cellIterator.hasNext()) {
 
 					Cell currentCell = cellIterator.next();
-					// getCellTypeEnum shown as deprecated for version 3.15
-					// getCellTypeEnum ill be renamed to getCellType starting
-					// from version 4.0
 
 					if (currentCell.getCellType() == Cell.CELL_TYPE_STRING) {
-						System.out.println("CellType : " + currentCell.getCellType() + "  Value : "
-								+ currentCell.getStringCellValue() );
+						System.out.print(" | " + currentCell.getStringCellValue());
 					} else if (currentCell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
-						System.out.println("CellType : " + currentCell.getCellType() + "  Value : "
-								+ currentCell.getNumericCellValue() );
+						System.out.print(" | " + currentCell.getNumericCellValue());
 					} else if (currentCell.getCellType() == Cell.CELL_TYPE_BOOLEAN) {
-						System.out.println("CellType : " + currentCell.getCellType() + "  Value : "
-								+ currentCell.getBooleanCellValue() );
+						System.out.print(" | " + currentCell.getBooleanCellValue());
 					}
 
 				}
-				System.out.println();
-
+				System.out.println(" | ");
 			}
+			excelFile.close();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -101,18 +101,90 @@ public class ExcelUtil {
 
 	}
 
-	private static void createRow(RoverClientA roverClientA1, Row row) {
+	public static void writeToExcelFile(String filePath, String sheetName, RoverAModel objToWrite) {
 
-		Cell cell = row.createCell(0);
-		cell.setCellValue(roverClientA1.getId());
+		try {
+			FileInputStream inputStream = new FileInputStream(new File(filePath));
 
-		cell = row.createCell(1);
-		cell.setCellValue(roverClientA1.getSpeedSensorData());
+			Workbook workbook4Read = WorkbookFactory.create(inputStream);
+			Sheet sheet = workbook4Read.getSheet(sheetName);
 
-		cell = row.createCell(2);
-		cell.setCellValue(roverClientA1.getPercentagePowerAvilable());
+			int rownum = sheet.getLastRowNum() + 1;
+			addRowEntryForRoverAModel(sheet, rownum, objToWrite);
 
-		cell = row.createCell(3);
-		cell.setCellValue(roverClientA1.isClientActive());
+			FileOutputStream outputStream = new FileOutputStream(new File(filePath));
+			workbook4Read.write(outputStream);
+
+			outputStream.close();
+			inputStream.close();
+
+		} catch (FileNotFoundException e) {
+			myLogger.info(
+					"\n LocalizedMessage : " + e.getLocalizedMessage() + "\n  		 Message :: " + e.getMessage()
+							+ "\n toString :: " + e.toString() + "\n:		 StackTrace :: " + e.getStackTrace());
+
+			myLogger.info(" The file not found, so creating new data file !! ");
+
+			try {
+				FileOutputStream outputStream = new FileOutputStream(new File(filePath));
+				HSSFWorkbook workbook = new HSSFWorkbook();
+
+				HSSFSheet sheet = workbook.createSheet(sheetName);
+				sheet.autoSizeColumn(0);
+
+				addHeaderEntryForRoverA(sheet, workbook, 0);
+
+				addRowEntryForRoverAModel(sheet, 1, objToWrite);
+
+				workbook.write(outputStream);
+				outputStream.close();
+
+			} catch (FileNotFoundException fnfe) {
+				myLogger.info(
+						"\n LocalizedMessage : " + e.getLocalizedMessage() + "\n  		 Message :: " + e.getMessage()
+								+ "\n toString :: " + e.toString() + "\n:		 StackTrace :: " + e.getStackTrace());
+				e.printStackTrace();
+
+			} catch (IOException ioe) {
+				e.printStackTrace();
+			}
+
+		} catch (IOException e) {
+			e.printStackTrace();
+
+		} catch (InvalidFormatException e) {
+			e.printStackTrace();
+		}
+
 	}
+
+	private static void addHeaderEntryForRoverA(HSSFSheet sheet, HSSFWorkbook workbook, int rowNumber) {
+
+		HSSFFont font = workbook.createFont();
+		font.setFontHeightInPoints((short) 15);
+		font.setBoldweight(HSSFFont.BOLDWEIGHT_NORMAL);
+
+		HSSFCellStyle style = workbook.createCellStyle();
+		style.setFont(font);
+
+		Row row = sheet.createRow(rowNumber);
+
+		String[] headerArray = { " Request Date & Time ", "Requester IP Address", "Requester MAC Address", "ID",
+				"Speed Sensor Data", "Percentage Power Avilable", "Client Active", "Temperature Sensor Data" };
+
+		for (int i = 0; i < headerArray.length; i++) {
+			Cell cell = row.createCell(i);
+			cell.setCellValue(headerArray[i]);
+			cell.setCellStyle(style);
+		}
+
+	}
+
+	public static void auditRequest(String appName, String roverAmodelAudit) {
+
+		RoverAModel roverAmodel = (RoverAModel) JSONUtil.getObjFromJSONString(roverAmodelAudit, new RoverAModel());
+		writeToExcelFile("./src/main/resources/Data.xls", appName, roverAmodel);
+
+	}
+
 }
