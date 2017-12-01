@@ -52,10 +52,10 @@ public class RoverAClient {
 		// String url = "opc.tcp://" + publicHostname + ":8666/" +
 		// applicationName; // ServerExample1
 
-		String url = "opc.tcp://" + IPMACUtil.getCurrentMachineIpAddress() + ":8666/" + applicationName;
-		myLogger.info("RoverAClient: Connecting to \"" + url + "\" .. ");
+		//String url = "opc.tcp://" + IPMACUtil.getCurrentMachineIpAddress() + ":8666/" + applicationName;
 
-		// "https://"+publicHostname+":8443/UAExample"; // ServerExample1
+		String url = "https://"+IPMACUtil.getCurrentMachineIpAddress()  +":8443/"+applicationName; // ServerExample1
+		myLogger.info("RoverAClient: Connecting to \"" + url + "\" .. ");
 
 		EndpointDescription[] endpoints = myClient.discoverEndpoints(url);
 

@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.dfki.iot.attack</groupId>
 	<artifactId>opc-ua-iot-security</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.1</version>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -80,21 +80,6 @@
 	<build>
 
 		<plugins>
-			<!-- Make this jar executable -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-jar-plugin</artifactId>
-				<configuration>
-					<archive>
-						<manifest>
-							<!-- Jar file entry point -->
-							<mainClass>org.dfki.iot.attack.Application</mainClass>
-						</manifest>
-					</archive>
-				</configuration>
-			</plugin>
-
-
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<executions>
@@ -115,6 +100,8 @@
 							<mainClass>org.dfki.iot.attack.Application</mainClass>
 						</manifest>
 					</archive>
+					<finalName>opc-ua-security-0.0.1</finalName>
+					<appendAssemblyId>false</appendAssemblyId>
 				</configuration>
 			</plugin>
 

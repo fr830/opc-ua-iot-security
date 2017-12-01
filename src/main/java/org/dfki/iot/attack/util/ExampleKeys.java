@@ -30,7 +30,6 @@ package org.dfki.iot.attack.util;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.InetAddress;
 import java.security.Key;
 import java.security.KeyStore;
@@ -95,8 +94,8 @@ public class ExampleKeys {
 	public static KeyPair getCert(String applicationName)
 	throws ServiceResultException
 	{
-		File certFile = new File("./src/main/resources/Cert/"+applicationName + ".der");
-		File privKeyFile =  new File("./src/main/resources/Cert/"+applicationName+ ".pem");
+		File certFile = new File(applicationName + ".der");
+		File privKeyFile =  new File(applicationName+ ".pem");
 		try {
 			Cert myServerCertificate = Cert.load( certFile );
 			PrivKey myServerPrivateKey = PrivKey.loadFromKeyStore( privKeyFile, PRIVKEY_PASSWORD );
@@ -131,8 +130,8 @@ public class ExampleKeys {
 	public static KeyPair getCACert()
 	throws ServiceResultException
 	{
-		File certFile = new File("./src/main/resources/Cert/SampleCA.der");
-		File privKeyFile =  new File("./src/main/resources/Cert/SampleCA.pem");
+		File certFile = new File("SampleCA.der");
+		File privKeyFile =  new File("SampleCA.pem");
 		try {
 			Cert myServerCertificate = Cert.load( certFile );
 			PrivKey myServerPrivateKey = PrivKey.loadFromKeyStore( privKeyFile, PRIVKEY_PASSWORD );
@@ -166,8 +165,8 @@ public class ExampleKeys {
 	public static KeyPair getHttpsCert(String applicationName)
 	throws ServiceResultException
 	{
-		File certFile = new File("./src/main/resources/Cert/"+applicationName + "_https.der");
-		File privKeyFile =  new File("./src/main/resources/Cert/" +applicationName+ "_https.pem");
+		File certFile = new File(applicationName + "_https.der");
+		File privKeyFile =  new File(applicationName+ "_https.pem");
 		try {
 			Cert myServerCertificate = Cert.load( certFile );
 			PrivKey myServerPrivateKey = PrivKey.loadFromKeyStore( privKeyFile, PRIVKEY_PASSWORD );
