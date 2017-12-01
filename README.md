@@ -13,5 +13,4 @@ java -jar opc-ua-security-0.0.1.jar
 
 ```
 java -cp opc-ua-security-0.0.1.jar org.dfki.iot.attack.client.RoverAClient RoverA
-
 ```

@@ -5,6 +5,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Iterator;
 
@@ -36,8 +38,10 @@ public class ExcelUtil {
 
 		Row row = sheet.createRow(rowNumber);
 
+		DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+		
 		Cell cell = row.createCell(0);
-		cell.setCellValue(new Date());
+		cell.setCellValue(dateFormat.format(new Date()));
 
 		cell = row.createCell(1);
 		cell.setCellValue(roverAModel.getRequesterIPAddress());
