@@ -6,7 +6,7 @@ import java.net.UnknownHostException;
 
 import org.dfki.iot.attack.server.RoverAServer;
 import org.dfki.iot.attack.util.ExcelUtil;
-import org.dfki.iot.attack.util.IPMACUtil;
+import org.dfki.iot.attack.util.GenericUtil;
 import org.opcfoundation.ua.common.ServiceFaultException;
 import org.opcfoundation.ua.common.ServiceResultException;
 import org.opcfoundation.ua.core.ResponseHeader;
@@ -39,8 +39,8 @@ public class Application {
 						// TestStack echo
 						ResponseHeader responseHeader = new ResponseHeader();
 						String[] StringTable = new String[2];
-						StringTable[0] = IPMACUtil.getCurrentMachineIpAddress();
-						StringTable[1] = IPMACUtil.getCurrentMachineMACAddress();
+						StringTable[0] = GenericUtil.getCurrentMachineIpAddress();
+						StringTable[1] = GenericUtil.getCurrentMachineMACAddress();
 						responseHeader.setStringTable(StringTable);
 
 						ExcelUtil.auditRequest("RoverA", req.getRequest().getInput().getValue().toString());
