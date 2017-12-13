@@ -12,30 +12,32 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class JSONUtil {
-	
+
 	// Create Logger
 	private static final Logger myLogger = LoggerFactory.getLogger(JSONUtil.class);
 
 	public static String getJSONString(Object object) {
 
 		ObjectMapper mapper = new ObjectMapper();
-		mapper.enable(SerializationConfig.Feature.INDENT_OUTPUT);
+
+		if ("true".equals(GenericUtil.readPropertyConfigFile("jsonPrettyPrint"))) {
+			mapper.enable(SerializationConfig.Feature.INDENT_OUTPUT);
+		}
 
 		String text = null;
-			try {
-				text = mapper.writeValueAsString(object);
-				myLogger.info("JSON String : "+ text);
-			} catch (JsonGenerationException e) {
-				myLogger.info(
-						"\n LocalizedMessage : " + e.getLocalizedMessage() + "\n  		 Message :: " + e.getMessage()
-								+ "\n toString :: " + e.toString() + "\n:		 StackTrace :: " + e.getStackTrace());
-				e.printStackTrace();
-			} catch (JsonMappingException e) {
-				e.printStackTrace();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			
+		try {
+			text = mapper.writeValueAsString(object);
+			myLogger.info("JSON String : " + text);
+		} catch (JsonGenerationException e) {
+			myLogger.info(
+					"\n LocalizedMessage : " + e.getLocalizedMessage() + "\n  		 Message :: " + e.getMessage()
+							+ "\n toString :: " + e.toString() + "\n:		 StackTrace :: " + e.getStackTrace());
+			e.printStackTrace();
+		} catch (JsonMappingException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 
 		return text;
 
@@ -60,13 +62,13 @@ public class JSONUtil {
 		return myObject;
 
 	}
-	
+
 	public static void main(String[] args) {
-		
+
 		RoverAModel roverAmodel = RoverAModel.getRandomRoverClientA();
-		RoverAModel resRoverAModel = ( RoverAModel ) getObjFromJSONString(getJSONString(roverAmodel),new RoverAModel());
+		RoverAModel resRoverAModel = (RoverAModel) getObjFromJSONString(getJSONString(roverAmodel), new RoverAModel());
 		System.out.println(resRoverAModel);
-		
+
 	}
-	
+
 }

@@ -1,28 +1,4 @@
-/*
- * ======================================================================== Copyright (c) 2005-2015
- * The OPC Foundation, Inc. All rights reserved.
- *
- * OPC Foundation MIT License 1.00
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
- * associated documentation files (the "Software"), to deal in the Software without restriction,
- * including without limitation the rights to use, copy, modify, merge, publish, distribute,
- * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in all copies or
- * substantial portions of the Software. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
- * KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
- * BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
- * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
- * IN THE SOFTWARE.
- *
- * The complete license agreement can be found here: http://opcfoundation.org/License/MIT/1.00/
- * ======================================================================
- */
-
-package org.dfki.iot.attack.server;
+package org.dfki.iot.attack;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -44,8 +20,6 @@ import java.util.UUID;
 
 import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.dfki.iot.attack.util.ExampleKeys;
-import org.dfki.iot.attack.util.ExcelUtil;
-import org.dfki.iot.attack.util.GenericUtil;
 import org.opcfoundation.ua.application.Application;
 import org.opcfoundation.ua.application.Server;
 import org.opcfoundation.ua.builtintypes.ByteString;
@@ -115,9 +89,9 @@ import org.opcfoundation.ua.utils.EndpointUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class RoverAServer {
+public class App {
 
-	private static final Logger logger = LoggerFactory.getLogger(RoverAServer.class);
+	private static final Logger logger = LoggerFactory.getLogger(App.class);
 	static Map<NodeId, Map<UnsignedInteger, DataValue>> onReadResultsMap;
 	static Map<NodeId, Class<?>> datatypeMap;
 

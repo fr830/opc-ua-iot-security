@@ -8,14 +8,15 @@ import static org.opcfoundation.ua.utils.EndpointUtil.sortBySecurityLevel;
 import org.dfki.iot.attack.model.RoverAModel;
 import org.dfki.iot.attack.util.ExampleKeys;
 import org.dfki.iot.attack.util.GenericUtil;
-import org.dfki.iot.attack.util.JSONUtil;
 import org.opcfoundation.ua.application.Client;
-import org.opcfoundation.ua.builtintypes.Variant;
+import org.opcfoundation.ua.application.SessionChannel;
+import org.opcfoundation.ua.core.Attributes;
 import org.opcfoundation.ua.core.EndpointDescription;
+import org.opcfoundation.ua.core.Identifiers;
 import org.opcfoundation.ua.core.MessageSecurityMode;
-import org.opcfoundation.ua.core.TestStackRequest;
-import org.opcfoundation.ua.core.TestStackResponse;
-import org.opcfoundation.ua.transport.ServiceChannel;
+import org.opcfoundation.ua.core.ReadResponse;
+import org.opcfoundation.ua.core.ReadValueId;
+import org.opcfoundation.ua.core.TimestampsToReturn;
 import org.opcfoundation.ua.transport.security.KeyPair;
 import org.opcfoundation.ua.transport.security.SecurityPolicy;
 import org.slf4j.Logger;
@@ -27,6 +28,7 @@ public class RoverAClient {
 
 	public static void main(String[] args) throws Exception {
 
+		// String applicationName = "/RoverA";
 		String applicationName = "RoverA";
 		String protocolType = null, ipAddress = null, endpointUrl = null;
 
@@ -92,19 +94,33 @@ public class RoverAClient {
 		roverAmodel.setRequesterMACAddress(GenericUtil.getCurrentMachineMACAddress());
 
 		// Create Channel
-		ServiceChannel myChannel = myClient.createServiceChannel(endpoint);
+		SessionChannel mySession = myClient.createSessionChannel(endpoint);
+		// mySession.activate("username", "123");
+		// mySession.activate("username", "password");
+		mySession.activate();
 
-		// Create Test Request
-		TestStackRequest req = new TestStackRequest(null, null, null, new Variant(JSONUtil.getJSONString(roverAmodel)));
-		myLogger.info("REQUEST: " + req);
+		// Read a variable (Works with NanoServer example!)
+		ReadResponse res5 = mySession.Read(null, null, TimestampsToReturn.Neither,
+				new ReadValueId(Identifiers.Server_NamespaceArray, Attributes.Value, null, null));
 
-		// Invoke service
-		TestStackResponse res = myChannel.TestStack(req);
-		myLogger.info("RESPONSE: " + res);
+		myLogger.info("RESPONSE: " + res5);
 
 		// Close channel
-		myChannel.closeAsync();
+		mySession.closeAsync();
 		System.exit(0);
+
+		/***
+		 * ServiceChannel myChannel = myClient.createServiceChannel(endpoint);
+		 * 
+		 * // Create Test Request TestStackRequest req = new
+		 * TestStackRequest(null, null, null, new
+		 * Variant(JSONUtil.getJSONString(roverAmodel)));
+		 * myLogger.info("REQUEST: " + req);
+		 * 
+		 * // Invoke service TestStackResponse res = myChannel.TestStack(req);
+		 * myLogger.info("RESPONSE: " + res);
+		 ***/
+
 	}
 
 }
