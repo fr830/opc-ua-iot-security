@@ -27,11 +27,11 @@ public class JSONUtil {
 		String text = null;
 		try {
 			text = mapper.writeValueAsString(object);
-			myLogger.info("JSON String : " + text);
+		//	myLogger.info("JSON String : " + text);
 		} catch (JsonGenerationException e) {
-			myLogger.info(
+			/*myLogger.info(
 					"\n LocalizedMessage : " + e.getLocalizedMessage() + "\n  		 Message :: " + e.getMessage()
-							+ "\n toString :: " + e.toString() + "\n:		 StackTrace :: " + e.getStackTrace());
+							+ "\n toString :: " + e.toString() + "\n:		 StackTrace :: " + e.getStackTrace());*/
 			e.printStackTrace();
 		} catch (JsonMappingException e) {
 			e.printStackTrace();
@@ -55,9 +55,9 @@ public class JSONUtil {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
-			myLogger.info(
+			/*myLogger.info(
 					"\n LocalizedMessage : " + e.getLocalizedMessage() + "\n  		 Message :: " + e.getMessage()
-							+ "\n toString :: " + e.toString() + "\n:		 StackTrace :: " + e.getStackTrace());
+							+ "\n toString :: " + e.toString() + "\n:		 StackTrace :: " + e.getStackTrace());*/
 		}
 		return myObject;
 
@@ -67,7 +67,7 @@ public class JSONUtil {
 
 		RoverAModel roverAmodel = RoverAModel.getRandomRoverClientA();
 		RoverAModel resRoverAModel = (RoverAModel) getObjFromJSONString(getJSONString(roverAmodel), new RoverAModel());
-		System.out.println(resRoverAModel);
+		//System.out.println(resRoverAModel);
 
 	}
 

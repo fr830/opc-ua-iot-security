@@ -43,9 +43,9 @@ import java.util.Scanner;
 import java.util.UUID;
 
 import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.dfki.iot.attack.util.EventLogUtil;
 import org.dfki.iot.attack.util.ExampleKeys;
 import org.dfki.iot.attack.util.ExcelUtil;
-import org.dfki.iot.attack.util.GenericUtil;
 import org.opcfoundation.ua.application.Application;
 import org.opcfoundation.ua.application.Server;
 import org.opcfoundation.ua.builtintypes.ByteString;
@@ -63,17 +63,40 @@ import org.opcfoundation.ua.common.ServiceFaultException;
 import org.opcfoundation.ua.common.ServiceResultException;
 import org.opcfoundation.ua.core.ActivateSessionRequest;
 import org.opcfoundation.ua.core.ActivateSessionResponse;
+import org.opcfoundation.ua.core.AddNodesItem;
+import org.opcfoundation.ua.core.AddNodesRequest;
+import org.opcfoundation.ua.core.AddNodesResponse;
+import org.opcfoundation.ua.core.AddNodesResult;
+import org.opcfoundation.ua.core.AddReferencesRequest;
+import org.opcfoundation.ua.core.AddReferencesResponse;
+import org.opcfoundation.ua.core.AnonymousIdentityToken;
 import org.opcfoundation.ua.core.ApplicationDescription;
 import org.opcfoundation.ua.core.ApplicationType;
 import org.opcfoundation.ua.core.AttributeServiceSetHandler;
 import org.opcfoundation.ua.core.Attributes;
+import org.opcfoundation.ua.core.BrowseNextRequest;
+import org.opcfoundation.ua.core.BrowseNextResponse;
+import org.opcfoundation.ua.core.BrowseRequest;
+import org.opcfoundation.ua.core.BrowseResponse;
 import org.opcfoundation.ua.core.BrowseResult;
+import org.opcfoundation.ua.core.CallMethodRequest;
+import org.opcfoundation.ua.core.CallMethodResult;
+import org.opcfoundation.ua.core.CallRequest;
+import org.opcfoundation.ua.core.CallResponse;
 import org.opcfoundation.ua.core.CancelRequest;
 import org.opcfoundation.ua.core.CancelResponse;
 import org.opcfoundation.ua.core.CloseSessionRequest;
 import org.opcfoundation.ua.core.CloseSessionResponse;
+import org.opcfoundation.ua.core.CreateMonitoredItemsRequest;
+import org.opcfoundation.ua.core.CreateMonitoredItemsResponse;
 import org.opcfoundation.ua.core.CreateSessionRequest;
 import org.opcfoundation.ua.core.CreateSessionResponse;
+import org.opcfoundation.ua.core.DeleteMonitoredItemsRequest;
+import org.opcfoundation.ua.core.DeleteMonitoredItemsResponse;
+import org.opcfoundation.ua.core.DeleteNodesRequest;
+import org.opcfoundation.ua.core.DeleteNodesResponse;
+import org.opcfoundation.ua.core.DeleteReferencesRequest;
+import org.opcfoundation.ua.core.DeleteReferencesResponse;
 import org.opcfoundation.ua.core.EndpointConfiguration;
 import org.opcfoundation.ua.core.FindServersRequest;
 import org.opcfoundation.ua.core.FindServersResponse;
@@ -82,17 +105,36 @@ import org.opcfoundation.ua.core.HistoryReadResponse;
 import org.opcfoundation.ua.core.HistoryUpdateRequest;
 import org.opcfoundation.ua.core.HistoryUpdateResponse;
 import org.opcfoundation.ua.core.Identifiers;
+import org.opcfoundation.ua.core.MethodServiceSetHandler;
+import org.opcfoundation.ua.core.ModifyMonitoredItemsRequest;
+import org.opcfoundation.ua.core.ModifyMonitoredItemsResponse;
+import org.opcfoundation.ua.core.MonitoredItemServiceSetHandler;
 import org.opcfoundation.ua.core.NodeClass;
+import org.opcfoundation.ua.core.NodeManagementServiceSetHandler;
+import org.opcfoundation.ua.core.QueryFirstRequest;
+import org.opcfoundation.ua.core.QueryFirstResponse;
+import org.opcfoundation.ua.core.QueryNextRequest;
+import org.opcfoundation.ua.core.QueryNextResponse;
 import org.opcfoundation.ua.core.ReadRequest;
 import org.opcfoundation.ua.core.ReadResponse;
 import org.opcfoundation.ua.core.ReadValueId;
 import org.opcfoundation.ua.core.ReferenceDescription;
+import org.opcfoundation.ua.core.RegisterNodesRequest;
+import org.opcfoundation.ua.core.RegisterNodesResponse;
 import org.opcfoundation.ua.core.RequestHeader;
 import org.opcfoundation.ua.core.ResponseHeader;
 import org.opcfoundation.ua.core.ServiceFault;
 import org.opcfoundation.ua.core.SessionServiceSetHandler;
+import org.opcfoundation.ua.core.SetMonitoringModeRequest;
+import org.opcfoundation.ua.core.SetMonitoringModeResponse;
+import org.opcfoundation.ua.core.SetTriggeringRequest;
+import org.opcfoundation.ua.core.SetTriggeringResponse;
 import org.opcfoundation.ua.core.SignatureData;
 import org.opcfoundation.ua.core.StatusCodes;
+import org.opcfoundation.ua.core.TranslateBrowsePathsToNodeIdsRequest;
+import org.opcfoundation.ua.core.TranslateBrowsePathsToNodeIdsResponse;
+import org.opcfoundation.ua.core.UnregisterNodesRequest;
+import org.opcfoundation.ua.core.UnregisterNodesResponse;
 import org.opcfoundation.ua.core.UserIdentityToken;
 import org.opcfoundation.ua.core.UserNameIdentityToken;
 import org.opcfoundation.ua.core.UserTokenPolicy;
@@ -101,6 +143,7 @@ import org.opcfoundation.ua.core.WriteResponse;
 import org.opcfoundation.ua.core.WriteValue;
 import org.opcfoundation.ua.encoding.DecodingException;
 import org.opcfoundation.ua.encoding.IEncodeable;
+import org.opcfoundation.ua.transport.AsyncWrite;
 import org.opcfoundation.ua.transport.Endpoint;
 import org.opcfoundation.ua.transport.endpoint.EndpointServiceRequest;
 import org.opcfoundation.ua.transport.security.BcCryptoProvider;
@@ -125,7 +168,7 @@ public class RoverAServer {
 	static ArrayList<NodeId> validAuthenticationTokens = new ArrayList<NodeId>();
 	static ArrayList<NodeId> sessions = new ArrayList<NodeId>();
 	static Map<NodeId, Long> timeoutPeriods = new HashMap<NodeId, Long>();
-
+    static Map<NodeId,IEncodeable> userAuthorization =new HashMap<NodeId, IEncodeable>();
 	static ContinuationPoint continuationPoint;
 
 	static RoverAServerExample roverServer;
@@ -280,6 +323,44 @@ public class RoverAServer {
 			req.sendResponse(response);
 		}
 	}
+	
+	
+	static class RoverMonitoredItemServiceHandler implements MonitoredItemServiceSetHandler{
+
+		public void onCreateMonitoredItems(
+				EndpointServiceRequest<CreateMonitoredItemsRequest, CreateMonitoredItemsResponse> req)
+				throws ServiceFaultException {
+			// TODO Auto-generated method stub
+			
+		}
+
+		public void onModifyMonitoredItems(
+				EndpointServiceRequest<ModifyMonitoredItemsRequest, ModifyMonitoredItemsResponse> req)
+				throws ServiceFaultException {
+			// TODO Auto-generated method stub
+			
+		}
+
+		public void onSetMonitoringMode(EndpointServiceRequest<SetMonitoringModeRequest, SetMonitoringModeResponse> req)
+				throws ServiceFaultException {
+			// TODO Auto-generated method stub
+			
+		}
+
+		public void onSetTriggering(EndpointServiceRequest<SetTriggeringRequest, SetTriggeringResponse> req)
+				throws ServiceFaultException {
+			// TODO Auto-generated method stub
+			
+		}
+
+		public void onDeleteMonitoredItems(
+				EndpointServiceRequest<DeleteMonitoredItemsRequest, DeleteMonitoredItemsResponse> req)
+				throws ServiceFaultException {
+			// TODO Auto-generated method stub
+			
+		}
+		
+	}
 
 	static class RoverAttributeServiceHandler implements AttributeServiceSetHandler {
 
@@ -393,9 +474,9 @@ public class RoverAServer {
 			}
 
 			// TODO: map the required fields of request data.
-			// ExcelUtil.auditRequest("RoverA",
-			// req.getRequest().getInput().getValue().toString());
-
+			/* ExcelUtil.auditRequest("RoverA",
+			 req.getRequest().getInput().getValue().toString());*/
+              
 			response = new ReadResponse(responseHeader, results, null);
 
 			req.sendResponse(response);
@@ -490,13 +571,21 @@ public class RoverAServer {
 
 	}
 
-	static class RoverAServerExample extends Server implements SessionServiceSetHandler {
+	static class RoverAServerExample extends Server implements SessionServiceSetHandler, MethodServiceSetHandler , NodeManagementServiceSetHandler {
+		public static final NodeId LIST_SOLVERS = new NodeId(2, "ListSolvers");
+		private static Integer temperature;
+		
+		public static Integer getTemperature() {
+			return temperature;
+		}
 
+		public static void setTemperature(Integer temperature) {
+			RoverAServerExample.temperature = temperature;
+		}
 		@SuppressWarnings("serial")
 		public RoverAServerExample(Application application, String applicationName) throws Exception {
 			super(application);
 			addServiceHandler(this);
-
 			// The HTTPS SecurityPolicies are defined separate from the endpoint
 			// securities
 			application.getHttpsSettings().setHttpsSecurityPolicies(HttpsSecurityPolicy.ALL);
@@ -514,6 +603,7 @@ public class RoverAServer {
 			// Add User Token Policies
 			addUserTokenPolicy(UserTokenPolicy.ANONYMOUS);
 			addUserTokenPolicy(UserTokenPolicy.SECURE_USERNAME_PASSWORD);
+			//addUserTokenPolicy(UserTokenPolicy.);
 
 			// Create an endpoint for each network interface
 			String hostname = EndpointUtil.getHostname();
@@ -568,6 +658,10 @@ public class RoverAServer {
 				}
 			});
 
+			
+			
+			
+			
 			// *******************************************************************************
 			// Put all data type mappings in one HashMap for better readability
 			// and performance
@@ -586,7 +680,7 @@ public class RoverAServer {
 				throws ServiceFaultException {
 
 			ActivateSessionRequest request = msgExchange.getRequest();
-
+			request.getRequestHeader().getAuthenticationToken().getValue();
 			StatusCode statusCode = null;
 			ActivateSessionResponse response = new ActivateSessionResponse();
 
@@ -631,13 +725,14 @@ public class RoverAServer {
 				try {
 
 					IEncodeable uit = request.getUserIdentityToken().decode(getEncoderContext());
-
+					userAuthorization.put(authenticationToken, uit);
 					if (uit instanceof UserNameIdentityToken) {
 						UserNameIdentityToken userNameIdentityToken = (UserNameIdentityToken) uit;
+						
 						String userName = userNameIdentityToken.getUserName();
 						String policyId = userNameIdentityToken.getPolicyId();
 						String encryptionAlgorithm = userNameIdentityToken.getEncryptionAlgorithm();
-
+                         
 						if (userName == null) {
 							statusCode = new StatusCode(StatusCodes.Bad_IdentityTokenInvalid);
 						} else if (userName.equals("username")) {
@@ -645,7 +740,7 @@ public class RoverAServer {
 						} else if (!userName.equals("user1") && !userName.equals("user2")) {
 							statusCode = new StatusCode(StatusCodes.Bad_IdentityTokenRejected);
 						}
-
+                          
 						// Checking that policy id and encryption algorithm are
 						// valid.
 						// Add all supported policy ids and encryption
@@ -681,26 +776,26 @@ public class RoverAServer {
 
 						}
 					}
-
-				} catch (DecodingException e) {
+									} catch (DecodingException e) {
 					// Auto-generated catch block
 					e.printStackTrace();
 				} catch (ServiceResultException e) {
 					// Auto-generated catch block
 					e.printStackTrace();
 				}
-
+				
 			}
 			response.setServerNonce(CryptoUtil.createNonce(32));
 
 			if (statusCode == null) {
 				statusCode = StatusCode.GOOD;
 				validAuthenticationTokens.add(authenticationToken);
+				
 			}
 			ResponseHeader h = new ResponseHeader(DateTime.currentTime(), requestHeader.getRequestHandle(), statusCode,
 					null, getApplication().getLocaleIds(), null);
 			response.setResponseHeader(h);
-
+			
 			msgExchange.sendResponse(response);
 		}
 
@@ -738,7 +833,6 @@ public class RoverAServer {
 				throws ServiceFaultException {
 			CreateSessionRequest request = msgExchange.getRequest();
 			CreateSessionResponse response = new CreateSessionResponse();
-
 			StatusCode statusCode = null;
 			byte[] token = new byte[32];
 			byte[] nonce = new byte[32];
@@ -775,7 +869,6 @@ public class RoverAServer {
 				EndpointConfiguration endpointConfiguration = EndpointConfiguration.defaults();
 				response.setMaxRequestMessageSize(UnsignedInteger.valueOf(Math.max(
 						endpointConfiguration.getMaxMessageSize(), request.getMaxResponseMessageSize().longValue())));
-
 				Double timeout = new Double(60 * 1000);
 				if (!request.getRequestedSessionTimeout().equals(new Double(0))) {
 					// set revised session timeout to 60 seconds or to lower
@@ -807,12 +900,14 @@ public class RoverAServer {
 
 			if (statusCode == null) {
 				statusCode = StatusCode.GOOD;
+				
 			}
 			// Set response header
 			ResponseHeader h = new ResponseHeader(DateTime.currentTime(), request.getRequestHeader().getRequestHandle(),
 					statusCode, null, getApplication().getLocaleIds(), null);
 			response.setResponseHeader(h);
-
+            EventLogUtil.writeSessionLog(response.getSessionId(),
+            		response.getAuthenticationToken(),request,response);
 			msgExchange.sendResponse(response);
 		}
 
@@ -847,6 +942,167 @@ public class RoverAServer {
 				}
 			}
 			return null;
+		}
+
+		public void onCall(EndpointServiceRequest<CallRequest, CallResponse> callRequest) throws ServiceFaultException {
+			CallResponse response = new CallResponse();
+			CallMethodRequest[] reqs = callRequest.getRequest().getMethodsToCall();
+			CallMethodResult[] results = new CallMethodResult[ reqs.length ];
+			
+			for (int i=0; i<reqs.length; i++) {
+				CallMethodRequest req = reqs[i];
+				CallMethodResult result = results[i] = new CallMethodResult();
+				
+				NodeId methodId = req.getMethodId();
+				if ( LIST_SOLVERS.equals(methodId) ) {				
+					
+					
+					Variant[] solvers = req.getInputArguments();			
+					Variant solversInVariant = new Variant( solvers );		
+					
+					
+					result.setOutputArguments( new Variant[] {solversInVariant} );
+					result.setStatusCode( StatusCode.GOOD );				
+				}
+				
+				else {
+					// Unknown method
+					result.setStatusCode( new StatusCode( StatusCodes.Bad_MethodInvalid ) );
+				}
+				
+			}
+			
+			/*for(CallMethodRequest req:reqs){
+				
+				NodeId methodId = req.getMethodId();
+				if(LIST_SOLVERS.equals(methodId)){
+				    
+					Variant[] inputArguments = req.getInputArguments();
+					 for(Variant v: inputArguments){
+						 
+					 }
+				}
+				
+			}*/
+			
+			response.setResults( results );
+		    callRequest.sendResponse(response);	
+		}
+
+		public void onAddNodes(EndpointServiceRequest<AddNodesRequest, AddNodesResponse> req)
+				throws ServiceFaultException {
+			  AddNodesRequest request = req.getRequest();
+			  AddNodesItem[] nodesToAdd = request.getNodesToAdd();
+			  AddNodesResponse response =new AddNodesResponse();
+			  AddNodesResult[] addNodesResult =new AddNodesResult[req.getRequest().getNodesToAdd().length];  
+			    IEncodeable iEncodeable = userAuthorization.get(req.getRequest().getRequestHeader().getAuthenticationToken());
+			    if (!(iEncodeable instanceof AnonymousIdentityToken)){
+			 //if(!("Anonymous").equalsIgnoreCase(userNameIdentityToken.getPolicyId())){ 
+			  int i=0;
+			 for(AddNodesItem addNodesItem:nodesToAdd){
+				 AddNodesResult result = addNodesResult[i] = new AddNodesResult();
+			 NodeId id=new NodeId(addNodesItem.getReferenceTypeId().getNamespaceIndex(), (UnsignedInteger)addNodesItem.getTypeDefinition().getValue());
+			 final DateTime serverTimeStamp = DateTime.currentTime();
+			 final String applicationURI = application.getApplicationUri();
+			 onReadResultsMap.put(id,  new HashMap<UnsignedInteger, DataValue>() {
+					{
+						put(Attributes.NodeId, new DataValue(new Variant(Identifiers.Server_NamespaceArray),
+								StatusCode.GOOD, null, serverTimeStamp));
+						put(Attributes.NodeClass,
+								new DataValue(new Variant(NodeClass.Variable), StatusCode.GOOD, null, serverTimeStamp));
+						put(Attributes.BrowseName, new DataValue(new Variant(new QualifiedName("NamespaceArray")),
+								StatusCode.GOOD, null, serverTimeStamp));
+						put(Attributes.DisplayName,
+								new DataValue(new Variant(new LocalizedText("NamespaceArray", LocalizedText.NO_LOCALE)),
+										StatusCode.GOOD, null, serverTimeStamp));
+						put(Attributes.Description,
+								new DataValue(
+										new Variant(new LocalizedText("The list of namespace URIs used by the server.",
+												LocalizedText.NO_LOCALE)),
+										StatusCode.GOOD, null, serverTimeStamp));
+						put(Attributes.WriteMask,
+								new DataValue(new Variant(new UnsignedInteger(0)), StatusCode.GOOD, null, serverTimeStamp));
+						put(Attributes.UserWriteMask,
+								new DataValue(new Variant(new UnsignedInteger(0)), StatusCode.GOOD, null, serverTimeStamp));
+						put(Attributes.Value,
+								new DataValue(new Variant(new String[] { "http://opcfoundation.org/UA/", applicationURI }),
+										StatusCode.GOOD, null, serverTimeStamp));
+					}
+				});
+			 
+			response.setResults(new AddNodesResult[]{new AddNodesResult(StatusCode.GOOD,id)});
+			i++;
+			result.setStatusCode(StatusCode.GOOD);
+			} 
+			}
+			 else{
+				 addNodesResult[0]=new AddNodesResult();
+				 addNodesResult[0].setStatusCode(StatusCode.BAD);
+				 response.setResults(addNodesResult);
+			 }
+			req.sendResponse(response);
+			
+			
+		}
+
+		public void onAddReferences(EndpointServiceRequest<AddReferencesRequest, AddReferencesResponse> req)
+				throws ServiceFaultException {
+			// TODO Auto-generated method stub
+			
+		}
+
+		public void onDeleteNodes(EndpointServiceRequest<DeleteNodesRequest, DeleteNodesResponse> req)
+				throws ServiceFaultException {
+			// TODO Auto-generated method stub
+			
+		}
+
+		public void onDeleteReferences(EndpointServiceRequest<DeleteReferencesRequest, DeleteReferencesResponse> req)
+				throws ServiceFaultException {
+			// TODO Auto-generated method stub
+			
+		}
+
+		public void onBrowse(EndpointServiceRequest<BrowseRequest, BrowseResponse> req) throws ServiceFaultException {
+			// TODO Auto-generated method stub
+			
+		}
+
+		public void onBrowseNext(EndpointServiceRequest<BrowseNextRequest, BrowseNextResponse> req)
+				throws ServiceFaultException {
+			// TODO Auto-generated method stub
+			
+		}
+
+		public void onTranslateBrowsePathsToNodeIds(
+				EndpointServiceRequest<TranslateBrowsePathsToNodeIdsRequest, TranslateBrowsePathsToNodeIdsResponse> req)
+				throws ServiceFaultException {
+			// TODO Auto-generated method stub
+			
+		}
+
+		public void onRegisterNodes(EndpointServiceRequest<RegisterNodesRequest, RegisterNodesResponse> req)
+				throws ServiceFaultException {
+			// TODO Auto-generated method stub
+			
+		}
+
+		public void onUnregisterNodes(EndpointServiceRequest<UnregisterNodesRequest, UnregisterNodesResponse> req)
+				throws ServiceFaultException {
+			// TODO Auto-generated method stub
+			
+		}
+
+		public void onQueryFirst(EndpointServiceRequest<QueryFirstRequest, QueryFirstResponse> req)
+				throws ServiceFaultException {
+			// TODO Auto-generated method stub
+			
+		}
+
+		public void onQueryNext(EndpointServiceRequest<QueryNextRequest, QueryNextResponse> req)
+				throws ServiceFaultException {
+			// TODO Auto-generated method stub
+			
 		}
 	}
 
@@ -912,6 +1168,7 @@ public class RoverAServer {
 
 		roverServer.addServiceHandler(new RoverAttributeServiceHandler());
 		roverServer.addServiceHandler(new FindServersServiceHandler());
+		roverServer.addServiceHandler(new RoverMonitoredItemServiceHandler() );
 
 		CryptoUtil.setCryptoProvider(new BcCryptoProvider());
 
