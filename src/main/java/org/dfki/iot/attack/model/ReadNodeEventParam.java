@@ -1,4 +1,4 @@
-package org.dfki.iot.attack.util;
+package org.dfki.iot.attack.model;
 
 
 import org.slf4j.Logger;
@@ -15,6 +15,10 @@ public class ReadNodeEventParam {
 		this.sessionId = sessionId;
 		this.authenToken = authenToken;
 		this.auditId = auditId;
+	}
+
+	public ReadNodeEventParam() {
+		super();
 	}
 
 	public String getSessionId() {

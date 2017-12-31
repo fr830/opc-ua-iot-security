@@ -115,7 +115,7 @@
 					<archive>
 						<manifest>
 							<!-- Jar file entry point -->
-							<mainClass>org.dfki.iot.attack.App</mainClass>
+							<mainClass>org.dfki.iot.attack.server.RoverAServer</mainClass>
 						</manifest>
 					</archive>
 					<finalName>opc-ua-security-0.0.1</finalName>

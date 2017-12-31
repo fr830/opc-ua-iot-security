@@ -29,8 +29,8 @@ public class EmailUtil {
 
 	public static void main(String[] args) throws IOException {
 
-		username = GenericUtil.readPropertyConfigFile("email.user");
-		password = GenericUtil.readPropertyConfigFile("email.pwd");
+		username = GenericUtil.readClientPropertyConfigFile("email.user");
+		password = GenericUtil.readClientPropertyConfigFile("email.pwd");
 
 		EmailUtil emailUtil = new EmailUtil();
 		emailUtil.sendEmail("Testing Subject", "herleraja@gmail.com", "herleraja@gmail.com",

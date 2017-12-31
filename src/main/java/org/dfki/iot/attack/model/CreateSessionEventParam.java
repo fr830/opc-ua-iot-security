@@ -1,4 +1,4 @@
-package org.dfki.iot.attack.util;
+package org.dfki.iot.attack.model;
 
 import java.security.Timestamp;
 

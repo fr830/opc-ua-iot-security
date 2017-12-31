@@ -20,7 +20,7 @@ public class JSONUtil {
 
 		ObjectMapper mapper = new ObjectMapper();
 
-		if ("true".equals(GenericUtil.readPropertyConfigFile("jsonPrettyPrint"))) {
+		if ("true".equals(GenericUtil.readClientPropertyConfigFile("jsonPrettyPrint"))) {
 			mapper.enable(SerializationConfig.Feature.INDENT_OUTPUT);
 		}
 

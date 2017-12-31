@@ -1,4 +1,4 @@
-package org.dfki.iot.attack.util;
+package org.dfki.iot.attack.model;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +13,12 @@ public class ActiveSessionEventParam {
 	private String sessionId;
 	private String authenToken;
 	private String userName;
+
+	
+	
+	public ActiveSessionEventParam() {
+		super();
+	}
 
 	public String getSessionId() {
 		return sessionId;

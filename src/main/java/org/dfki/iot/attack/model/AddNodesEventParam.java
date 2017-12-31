@@ -1,4 +1,4 @@
-package org.dfki.iot.attack.util;
+package org.dfki.iot.attack.model;
 
 import java.security.Timestamp;
 
@@ -11,6 +11,12 @@ public class AddNodesEventParam {
 	private String sessionId;
 	private String authenToken;
 	private String reqAuditId;
+
+	
+	
+	public AddNodesEventParam() {
+		super();
+	}
 
 	public AddNodesEventParam(String sessionId, String authenToken, String reqAuditId) {
 		super();

@@ -43,8 +43,45 @@ public class GenericUtil {
 
 	}
 
-	public static String readPropertyConfigFile(String propertyName) {
+	public static String readClientPropertyConfigFile(String propertyName) {
 		String filename = "config.properties";
+		Properties prop = new Properties();
+		InputStream input = null;
+
+		try {
+
+			input = EmailUtil.class.getClassLoader().getResourceAsStream(filename);
+			if (input == null) {
+				myLogger.info("Sorry, unable to find " + filename);
+				return null;
+			}
+
+			prop.load(input);
+			myLogger.info("Property [ " + propertyName + " ] retreieved successfully");
+
+			return prop.getProperty(propertyName);
+
+		} catch (IOException ex) {
+			myLogger.info(
+					"\n LocalizedMessage : " + ex.getLocalizedMessage() + "\n  		 Message :: " + ex.getMessage()
+							+ "\n toString :: " + ex.toString() + "\n:		 StackTrace :: " + ex.getStackTrace());
+		} finally {
+			if (input != null) {
+				try {
+					input.close();
+				} catch (IOException e) {
+					myLogger.info("\n LocalizedMessage : " + e.getLocalizedMessage() + "\n  		 Message :: "
+							+ e.getMessage() + "\n toString :: " + e.toString() + "\n:		 StackTrace :: "
+							+ e.getStackTrace());
+				}
+			}
+		}
+		return null;
+
+	}
+	
+	public static String readServerPropertyConfigFile(String propertyName) {
+		String filename = "serverconfig.properties";
 		Properties prop = new Properties();
 		InputStream input = null;
 

@@ -5,56 +5,48 @@ import static org.opcfoundation.ua.utils.EndpointUtil.selectByProtocol;
 import static org.opcfoundation.ua.utils.EndpointUtil.selectBySecurityPolicy;
 import static org.opcfoundation.ua.utils.EndpointUtil.sortBySecurityLevel;
 
-import javax.swing.plaf.basic.BasicDesktopIconUI;
-
 import org.dfki.iot.attack.model.RoverAModel;
 import org.dfki.iot.attack.util.EventLogUtil;
 import org.dfki.iot.attack.util.ExampleKeys;
-import org.dfki.iot.attack.util.ExcelUtil;
 import org.dfki.iot.attack.util.GenericUtil;
 import org.opcfoundation.ua.application.Client;
 import org.opcfoundation.ua.application.SessionChannel;
+import org.opcfoundation.ua.builtintypes.DataValue;
 import org.opcfoundation.ua.builtintypes.DateTime;
-import org.opcfoundation.ua.builtintypes.ExpandedNodeId;
-import org.opcfoundation.ua.builtintypes.ExtensionObject;
+import org.opcfoundation.ua.builtintypes.LocalizedText;
 import org.opcfoundation.ua.builtintypes.NodeId;
-import org.opcfoundation.ua.builtintypes.QualifiedName;
 import org.opcfoundation.ua.builtintypes.StatusCode;
 import org.opcfoundation.ua.builtintypes.UnsignedInteger;
 import org.opcfoundation.ua.builtintypes.Variant;
-import org.opcfoundation.ua.core.ActivateSessionResponse;
-import org.opcfoundation.ua.core.AddNodesItem;
-import org.opcfoundation.ua.core.AddNodesRequest;
-import org.opcfoundation.ua.core.AddNodesResponse;
+import org.opcfoundation.ua.core.ApplicationDescription;
 import org.opcfoundation.ua.core.Attributes;
-import org.opcfoundation.ua.core.BrowseDescription;
-import org.opcfoundation.ua.core.BrowseRequest;
 import org.opcfoundation.ua.core.CallMethodRequest;
 import org.opcfoundation.ua.core.CallRequest;
 import org.opcfoundation.ua.core.CallResponse;
 import org.opcfoundation.ua.core.EndpointDescription;
 import org.opcfoundation.ua.core.Identifiers;
 import org.opcfoundation.ua.core.MessageSecurityMode;
-import org.opcfoundation.ua.core.NodeClass;
 import org.opcfoundation.ua.core.ReadResponse;
 import org.opcfoundation.ua.core.ReadValueId;
 import org.opcfoundation.ua.core.RequestHeader;
-import org.opcfoundation.ua.core.SetMonitoringModeRequest;
 import org.opcfoundation.ua.core.TimestampsToReturn;
 import org.opcfoundation.ua.core.UserNameIdentityToken;
+import org.opcfoundation.ua.core.WriteRequest;
+import org.opcfoundation.ua.core.WriteResponse;
+import org.opcfoundation.ua.core.WriteValue;
 import org.opcfoundation.ua.transport.security.KeyPair;
 import org.opcfoundation.ua.transport.security.SecurityPolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class RoverAClient {
+public class RoverAClient1 {
 
-	private static final Logger myLogger = LoggerFactory.getLogger(RoverAClient.class);
+	private static final Logger myLogger = LoggerFactory.getLogger(RoverAClient1.class);
 	private static final RequestHeader RequestHeader = null;
 
 	public static void main(String[] args) throws Exception {
 
-		// String applicationName = "/RoverA";
+		// String applicationName = "/RoverA";131.246.169.225
 		String applicationName = "TimeSyncServer";
 		String protocolType = null, ipAddress = null, endpointUrl = null;
 
@@ -76,7 +68,6 @@ public class RoverAClient {
 			protocolType = args[0];
 			ipAddress = args[1];
 		}
-		//protocolType=""
 		////////////// CLIENT //////////////
 		// Load Client's Application Instance Certificate from file
 		KeyPair myClientApplicationInstanceCertificate = ExampleKeys.getCert(applicationName);
@@ -85,7 +76,7 @@ public class RoverAClient {
 		KeyPair myHttpsCertificate = ExampleKeys.getHttpsCert(applicationName);
 		myClient.getApplication().getHttpsSettings().setKeyPair(myHttpsCertificate);
 		//////////////////////////////////////
-		//192.168.0.105:8443
+
 		if (("opc.tcp").equalsIgnoreCase(protocolType)) {
 
 			endpointUrl = protocolType + "://" + "131.246.169.225" + ":8666/" + applicationName;
@@ -95,6 +86,11 @@ public class RoverAClient {
 
 		myLogger.info("RoverAClient: Connecting to \"" + endpointUrl + "\" .. ");
 
+		/*String uri = "opc.tcp://localhost:62541/";
+		uri = "opc.tcp://192.168.0.105:8666/TimeSyncServer";
+		// Discover server applications
+		ApplicationDescription[] servers = myClient.discoverApplications( uri );*/
+		
 		EndpointDescription[] endpoints = myClient.discoverEndpoints(endpointUrl);
 
 		// Filter out all but opc.tcp protocol endpoints
@@ -110,52 +106,31 @@ public class RoverAClient {
 		} else {
 			endpoints = selectByProtocol(endpoints, "https");
 		}
-     
-		//myClient.set
+		
+/////////  DISCOVER SERVERS  /////////
+		
+		
+		// Choose one application
+	//	ApplicationDescription server = servers[0];
+		// Connect the application
+
 		// Choose one endpoint
-		EndpointDescription endpoint = endpoints[0];
+	EndpointDescription endpoint = endpoints[0];
 
 		endpoint.setEndpointUrl(endpointUrl);
 
-	//	roverAmodel.setRequesterIPAddress(GenericUtil.getCurrentMachineIpAddress());
-	//	roverAmodel.setRequesterMACAddress(GenericUtil.getCurrentMachineMACAddress());
-		
+	
+
 		// Create Channel
 		SessionChannel mySession = myClient.createSessionChannel(endpoint);
-		EventLogUtil.writeClientEventLog("ClientId1",
-				mySession.getSession().getAuthenticationToken().toString());
-//mySession.getSession().getDiagnosticsInfo().get
-		/*SetMonitoringModeRequest reqAudit=new SetMonitoringModeRequest();
-		org.opcfoundation.ua.core.RequestHeader requestHead=new RequestHeader();
-		String AuditEntryId="Client1234!@##";
-		requestHead.setAuditEntryId(AuditEntryId);
-		reqAudit.setRequestHeader(requestHead);
-		mySession.SetMonitoringMode(reqAudit);*/
+
+	//	mySession.activate("user1", "p4ssword");
 	//	mySession.activate("user", "password");
-	//	 mySession.activate("username", "password");
+		EventLogUtil.writeClientEventLog("ClientId2",
+				mySession.getSession().getAuthenticationToken().toString());
 		
 		mySession.activate();
-		AddNodesRequest req =new AddNodesRequest();
-		org.opcfoundation.ua.core.RequestHeader requsetHeader =new RequestHeader();
-		requsetHeader.setAuditEntryId(""+mySession.getSession().getAuthenticationToken()+DateTime.currentTime()); 
-		req.setRequestHeader(requsetHeader );
-		UnsignedInteger unsignedInteger=new UnsignedInteger(567);
-		NodeId nodeId =new NodeId(0, "second Node");
-		AddNodesItem addNodesItem=new AddNodesItem();
-		QualifiedName BrowseName =new QualifiedName("NamespaceArray");
-		addNodesItem.setBrowseName(BrowseName );
-		ExpandedNodeId ParentNodeId =new ExpandedNodeId(new UnsignedInteger(1), "http://opcfoundation.org/UA/", unsignedInteger);
-		addNodesItem.setParentNodeId(ParentNodeId );
-		ExpandedNodeId typeId =new ExpandedNodeId("http://opcfoundation.org/UA/",unsignedInteger);
-		addNodesItem.setRequestedNewNodeId(typeId);
-		addNodesItem.setTypeDefinition(typeId);
-		addNodesItem.setNodeClass(NodeClass.Object);
-		addNodesItem.setReferenceTypeId(nodeId);
-		ExtensionObject NodeAttributes =new ExtensionObject(typeId);
-		addNodesItem.setNodeAttributes(NodeAttributes );
-		req.setNodesToAdd(new AddNodesItem []{addNodesItem});
-		AddNodesResponse addNodes = mySession.AddNodes(req);
-		myLogger.info("RESPONSE: ADD NODE " + addNodes);
+		
 		/*CallMethodRequest[] MethodsToCall =null;
 		Variant[] InputArguments = null;
 		MethodsToCall[0].setInputArguments(InputArguments );;
@@ -163,54 +138,60 @@ public class RoverAClient {
 		CallRequest req = new CallRequest(RequestHeader, MethodsToCall );
 		CallResponse call = mySession.Call(req);*/
 	
-		
-		
-		//Method Node Call
-	/*	CallRequest callRequest = new CallRequest();
+	/*	
+		CallRequest callRequest = new CallRequest();
 		CallMethodRequest methodRequest = new CallMethodRequest();
 		CallMethodRequest methodRequest2 = new CallMethodRequest();
 		
-		Variant variant1 = new Variant(new Integer []{1,2,3});
-		Variant variant2 = new Variant(new Integer []{4,5,6});
+		Variant variant1 = new Variant(new Integer []{7,8,9});
+		Variant variant2 = new Variant(new Integer []{43,5,6});
 		methodRequest2.setInputArguments(new Variant[]{variant1,variant2});
 		callRequest.setMethodsToCall( new CallMethodRequest[] {methodRequest,methodRequest2} );
 		NodeId MethodId = new NodeId(2, "ListSolvers");
 		methodRequest.setMethodId(MethodId );
 		methodRequest2.setMethodId(MethodId);
 		CallResponse res = mySession.Call( callRequest );
-		System.out.println( res );*/
-		/*BrowseRequest brreq =new BrowseRequest();
-		
-		brreq.setNodesToBrowse(new BrowseDescription[]{new BrowseDescription(123, , , IncludeSubtypes, NodeClassMask, ResultMask)});
-		mySession.Browse(brreq );*/
-		
-		//Read Node Call
-		
-		NodeId nodeSearch= new NodeId(0, 567);
-		RequestHeader readHeader=new RequestHeader();
-		
-		readHeader.setAuditEntryId(""+mySession.getSession().getAuthenticationToken()+DateTime.currentTime());
-		ReadResponse res5 = mySession.Read(readHeader, null, TimestampsToReturn.Neither,
-				new ReadValueId(nodeSearch, Attributes.Value, null, null));
+		System.out.println( res );
 
-		myLogger.info("RESPONSE: " + res5);
-		
+		// Read a variable (Works with NanoServer example!)
+		ReadResponse res5 = mySession.Read(null, null, TimestampsToReturn.Neither,
+				new ReadValueId(Identifiers.Server_NamespaceArray, Attributes.Value, null, null));
+
+		myLogger.info("RESPONSE: " + res5);*/
 
 		// Close channel
+		NodeId nodeSearch=Identifiers.Server_ServerStatus ;
+		RequestHeader readHeader=new RequestHeader();
+		readHeader.setAuditEntryId(""+mySession.getSession().getAuthenticationToken()+DateTime.currentTime()); 
+		//Before
+		ReadResponse res4 = mySession.Read(readHeader, null, TimestampsToReturn.Neither,
+				new ReadValueId(nodeSearch, Attributes.Description, null, null));
+		//Write
+		myLogger.info("Read Response:Before Modification " + res4);
+		WriteRequest req=new WriteRequest();
+		org.opcfoundation.ua.core.RequestHeader readHeaderWrite =new RequestHeader();
+		req.setRequestHeader(readHeaderWrite );
+		readHeaderWrite.setAuditEntryId(""+mySession.getSession().getAuthenticationToken()+DateTime.currentTime()); 
+		WriteValue value=new WriteValue(Identifiers.Server_ServerStatus,Attributes.Description,  "", new DataValue(
+                new Variant(new LocalizedText("This Node has corrupted use different Node to retrieve the ServerTime", LocalizedText.NO_LOCALE)),
+                StatusCode.GOOD, null, null));
+		WriteValue[] NodesToWrite={value};
+		req.setNodesToWrite(NodesToWrite);
+		WriteResponse write = mySession.Write(req);
+		
+		myLogger.info("WriteResponse: After Attribute Write " + write);
+		
+		readHeader.setAuditEntryId(""+mySession.getSession().getAuthenticationToken()+DateTime.currentTime()); 
+		//readHeader.setAuditEntryId(""+mySession.getSession().getAuthenticationToken()+DateTime.currentTime());
+		ReadResponse res5 = mySession.Read(readHeader, null, TimestampsToReturn.Neither,
+				new ReadValueId(nodeSearch, Attributes.Description, null, null));
+		myLogger.info("Read Response : Read After Write Attribute " + res5);
 		mySession.closeAsync();
 		System.exit(0);
 
-		/***
-		 * ServiceChannel myChannel = myClient.createServiceChannel(endpoint);
-		 * 
-		 * // Create Test Request TestStackRequest req = new
-		 * TestStackRequest(null, null, null, new
-		 * Variant(JSONUtil.getJSONString(roverAmodel)));
-		 * myLogger.info("REQUEST: " + req);
-		 * 
-		 * // Invoke service TestStackResponse res = myChannel.TestStack(req);
-		 * myLogger.info("RESPONSE: " + res);
-		 ***/
+		
+		
+		
 
 	}
 
