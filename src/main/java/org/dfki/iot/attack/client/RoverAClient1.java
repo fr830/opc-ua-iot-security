@@ -79,9 +79,9 @@ public class RoverAClient1 {
 
 		if (("opc.tcp").equalsIgnoreCase(protocolType)) {
 
-			endpointUrl = protocolType + "://" + "131.246.169.225" + ":8666/" + applicationName;
+			endpointUrl = protocolType + "://" + ipAddress + ":8666/" + applicationName;
 		} else {
-			endpointUrl = protocolType + "://" + "131.246.169.225" + ":8443/" + applicationName;
+			endpointUrl = protocolType + "://" + ipAddress + ":8443/" + applicationName;
 		}
 
 		myLogger.info("RoverAClient: Connecting to \"" + endpointUrl + "\" .. ");
