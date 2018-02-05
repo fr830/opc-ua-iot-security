@@ -1,21 +1,15 @@
 package org.dfki.iot.attack.model;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * 
  * @author sriharsha
  *
  */
 public class ActiveSessionEventParam {
-	private static final Logger myLogger = LoggerFactory.getLogger(ActiveSessionEventParam.class);
 	private String sessionId;
 	private String authenToken;
 	private String userName;
 
-	
-	
 	public ActiveSessionEventParam() {
 		super();
 	}

@@ -3,8 +3,6 @@ package org.dfki.iot.attack.model;
 import java.security.Timestamp;
 
 import org.opcfoundation.ua.builtintypes.UnsignedInteger;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 
@@ -12,7 +10,6 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class CreateSessionEventParam {
-	private static final Logger myLogger = LoggerFactory.getLogger(CreateSessionEventParam.class);
 	private String sessionId;
 	private String authenToken;
 	private String sessionName;
@@ -39,7 +36,7 @@ public class CreateSessionEventParam {
 	}
 
 	public CreateSessionEventParam() {
-		
+
 	}
 
 	public String getSessionId() {
@@ -113,7 +110,5 @@ public class CreateSessionEventParam {
 	public void setResRevisedTimeOut(Double resRevisedTimeOut) {
 		this.resRevisedTimeOut = resRevisedTimeOut;
 	}
-
-	
 
 }

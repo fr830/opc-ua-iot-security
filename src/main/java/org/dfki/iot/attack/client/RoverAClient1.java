@@ -5,7 +5,6 @@ import static org.opcfoundation.ua.utils.EndpointUtil.selectByProtocol;
 import static org.opcfoundation.ua.utils.EndpointUtil.selectBySecurityPolicy;
 import static org.opcfoundation.ua.utils.EndpointUtil.sortBySecurityLevel;
 
-import org.dfki.iot.attack.model.RoverAModel;
 import org.dfki.iot.attack.util.EventLogUtil;
 import org.dfki.iot.attack.util.ExampleKeys;
 import org.dfki.iot.attack.util.GenericUtil;
@@ -16,13 +15,8 @@ import org.opcfoundation.ua.builtintypes.DateTime;
 import org.opcfoundation.ua.builtintypes.LocalizedText;
 import org.opcfoundation.ua.builtintypes.NodeId;
 import org.opcfoundation.ua.builtintypes.StatusCode;
-import org.opcfoundation.ua.builtintypes.UnsignedInteger;
 import org.opcfoundation.ua.builtintypes.Variant;
-import org.opcfoundation.ua.core.ApplicationDescription;
 import org.opcfoundation.ua.core.Attributes;
-import org.opcfoundation.ua.core.CallMethodRequest;
-import org.opcfoundation.ua.core.CallRequest;
-import org.opcfoundation.ua.core.CallResponse;
 import org.opcfoundation.ua.core.EndpointDescription;
 import org.opcfoundation.ua.core.Identifiers;
 import org.opcfoundation.ua.core.MessageSecurityMode;
@@ -30,7 +24,6 @@ import org.opcfoundation.ua.core.ReadResponse;
 import org.opcfoundation.ua.core.ReadValueId;
 import org.opcfoundation.ua.core.RequestHeader;
 import org.opcfoundation.ua.core.TimestampsToReturn;
-import org.opcfoundation.ua.core.UserNameIdentityToken;
 import org.opcfoundation.ua.core.WriteRequest;
 import org.opcfoundation.ua.core.WriteResponse;
 import org.opcfoundation.ua.core.WriteValue;
@@ -126,7 +119,7 @@ public class RoverAClient1 {
 
 	//	mySession.activate("user1", "p4ssword");
 	//	mySession.activate("user", "password");
-		EventLogUtil.writeClientEventLog("ClientId2",
+		EventLogUtil.writeToClientEventLog("ClientId2",
 				mySession.getSession().getAuthenticationToken().toString());
 		
 		mySession.activate();
@@ -161,6 +154,7 @@ public class RoverAClient1 {
 
 		// Close channel
 		NodeId nodeSearch=Identifiers.Server_ServerStatus ;
+		
 		RequestHeader readHeader=new RequestHeader();
 		readHeader.setAuditEntryId(""+mySession.getSession().getAuthenticationToken()+DateTime.currentTime()); 
 		//Before
@@ -171,8 +165,9 @@ public class RoverAClient1 {
 		WriteRequest req=new WriteRequest();
 		org.opcfoundation.ua.core.RequestHeader readHeaderWrite =new RequestHeader();
 		req.setRequestHeader(readHeaderWrite );
+		
 		readHeaderWrite.setAuditEntryId(""+mySession.getSession().getAuthenticationToken()+DateTime.currentTime()); 
-		WriteValue value=new WriteValue(Identifiers.Server_ServerStatus,Attributes.Description,  "", new DataValue(
+		WriteValue value=new WriteValue(nodeSearch,Attributes.Description,  "", new DataValue(
                 new Variant(new LocalizedText("This Node has corrupted use different Node to retrieve the ServerTime", LocalizedText.NO_LOCALE)),
                 StatusCode.GOOD, null, null));
 		WriteValue[] NodesToWrite={value};

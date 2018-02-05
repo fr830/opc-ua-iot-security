@@ -1,27 +1,3 @@
-/*
- * ======================================================================== Copyright (c) 2005-2015
- * The OPC Foundation, Inc. All rights reserved.
- *
- * OPC Foundation MIT License 1.00
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
- * associated documentation files (the "Software"), to deal in the Software without restriction,
- * including without limitation the rights to use, copy, modify, merge, publish, distribute,
- * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in all copies or
- * substantial portions of the Software. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
- * KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
- * BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
- * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
- * IN THE SOFTWARE.
- *
- * The complete license agreement can be found here: http://opcfoundation.org/License/MIT/1.00/
- * ======================================================================
- */
-
 package org.dfki.iot.attack.server;
 
 import java.io.ByteArrayOutputStream;
@@ -44,10 +20,11 @@ import java.util.UUID;
 
 import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.dfki.iot.attack.model.ActiveSessionEventParam;
-import org.dfki.iot.attack.model.AddNodesEventParam;
+import org.dfki.iot.attack.model.CreateSessionEventParam;
+import org.dfki.iot.attack.model.EventParamModel;
+import org.dfki.iot.attack.model.EventModel;
 import org.dfki.iot.attack.util.EventLogUtil;
 import org.dfki.iot.attack.util.ExampleKeys;
-import org.dfki.iot.attack.util.ExcelUtil;
 import org.dfki.iot.attack.util.GenericUtil;
 import org.opcfoundation.ua.application.Application;
 import org.opcfoundation.ua.application.Server;
@@ -83,20 +60,14 @@ import org.opcfoundation.ua.core.BrowseNextResponse;
 import org.opcfoundation.ua.core.BrowseRequest;
 import org.opcfoundation.ua.core.BrowseResponse;
 import org.opcfoundation.ua.core.BrowseResult;
-import org.opcfoundation.ua.core.CallMethodRequest;
-import org.opcfoundation.ua.core.CallMethodResult;
 import org.opcfoundation.ua.core.CallRequest;
 import org.opcfoundation.ua.core.CallResponse;
 import org.opcfoundation.ua.core.CancelRequest;
 import org.opcfoundation.ua.core.CancelResponse;
 import org.opcfoundation.ua.core.CloseSessionRequest;
 import org.opcfoundation.ua.core.CloseSessionResponse;
-import org.opcfoundation.ua.core.CreateMonitoredItemsRequest;
-import org.opcfoundation.ua.core.CreateMonitoredItemsResponse;
 import org.opcfoundation.ua.core.CreateSessionRequest;
 import org.opcfoundation.ua.core.CreateSessionResponse;
-import org.opcfoundation.ua.core.DeleteMonitoredItemsRequest;
-import org.opcfoundation.ua.core.DeleteMonitoredItemsResponse;
 import org.opcfoundation.ua.core.DeleteNodesRequest;
 import org.opcfoundation.ua.core.DeleteNodesResponse;
 import org.opcfoundation.ua.core.DeleteReferencesRequest;
@@ -110,9 +81,6 @@ import org.opcfoundation.ua.core.HistoryUpdateRequest;
 import org.opcfoundation.ua.core.HistoryUpdateResponse;
 import org.opcfoundation.ua.core.Identifiers;
 import org.opcfoundation.ua.core.MethodServiceSetHandler;
-import org.opcfoundation.ua.core.ModifyMonitoredItemsRequest;
-import org.opcfoundation.ua.core.ModifyMonitoredItemsResponse;
-import org.opcfoundation.ua.core.MonitoredItemServiceSetHandler;
 import org.opcfoundation.ua.core.NodeClass;
 import org.opcfoundation.ua.core.NodeManagementServiceSetHandler;
 import org.opcfoundation.ua.core.QueryFirstRequest;
@@ -129,10 +97,6 @@ import org.opcfoundation.ua.core.RequestHeader;
 import org.opcfoundation.ua.core.ResponseHeader;
 import org.opcfoundation.ua.core.ServiceFault;
 import org.opcfoundation.ua.core.SessionServiceSetHandler;
-import org.opcfoundation.ua.core.SetMonitoringModeRequest;
-import org.opcfoundation.ua.core.SetMonitoringModeResponse;
-import org.opcfoundation.ua.core.SetTriggeringRequest;
-import org.opcfoundation.ua.core.SetTriggeringResponse;
 import org.opcfoundation.ua.core.SignatureData;
 import org.opcfoundation.ua.core.StatusCodes;
 import org.opcfoundation.ua.core.TranslateBrowsePathsToNodeIdsRequest;
@@ -147,7 +111,6 @@ import org.opcfoundation.ua.core.WriteResponse;
 import org.opcfoundation.ua.core.WriteValue;
 import org.opcfoundation.ua.encoding.DecodingException;
 import org.opcfoundation.ua.encoding.IEncodeable;
-import org.opcfoundation.ua.transport.AsyncWrite;
 import org.opcfoundation.ua.transport.Endpoint;
 import org.opcfoundation.ua.transport.endpoint.EndpointServiceRequest;
 import org.opcfoundation.ua.transport.security.BcCryptoProvider;
@@ -172,13 +135,15 @@ public class RoverAServer {
 	static ArrayList<NodeId> validAuthenticationTokens = new ArrayList<NodeId>();
 	static ArrayList<NodeId> sessions = new ArrayList<NodeId>();
 	static Map<NodeId, Long> timeoutPeriods = new HashMap<NodeId, Long>();
-    static Map<NodeId,IEncodeable> userAuthorization =new HashMap<NodeId, IEncodeable>();
+	// The list of authorized users. Currently all the valid users except
+	// ANONYMOUS users are authorized.
+	static Map<NodeId, IEncodeable> userAuthorization = new HashMap<NodeId, IEncodeable>();
 	static ContinuationPoint continuationPoint;
 
 	static RoverAServerExample roverServer;
 
 	/**
-	 * Class to represent ContinuationPoint. NanoServer supports one
+	 * Class to represent ContinuationPoint. This Server supports one
 	 * continuation point at a time.
 	 */
 	static class ContinuationPoint {
@@ -327,55 +292,58 @@ public class RoverAServer {
 			req.sendResponse(response);
 		}
 	}
-	
-	
-	
-	
+
 	static class RoverNodemanagementServiceHandler implements NodeManagementServiceSetHandler {
 
 		public void onAddNodes(EndpointServiceRequest<AddNodesRequest, AddNodesResponse> req)
 				throws ServiceFaultException {
-			AddNodesEventParam addNodesEventParam =new AddNodesEventParam();
-			  AddNodesRequest request = req.getRequest();
-			  AddNodesItem[] nodesToAdd = request.getNodesToAdd();
-			  AddNodesResponse response =new AddNodesResponse();
-			  AddNodesResult[] addNodesResult =new AddNodesResult[req.getRequest().getNodesToAdd().length];  
-			    IEncodeable iEncodeable = userAuthorization.get(req.getRequest().getRequestHeader().getAuthenticationToken());
-			    String authorisation =GenericUtil.readServerPropertyConfigFile("authorisation");
-			   if("true".equalsIgnoreCase(authorisation)){ 
-			    if (!(iEncodeable instanceof AnonymousIdentityToken)){
-			 addNodeProperties(nodesToAdd, response, addNodesResult); 
+			AddNodesRequest request = req.getRequest();
+			AddNodesItem[] nodesToAdd = request.getNodesToAdd();
+			AddNodesResponse response = new AddNodesResponse();
+			AddNodesResult[] addNodesResult = new AddNodesResult[req.getRequest().getNodesToAdd().length];
+			IEncodeable iEncodeable = userAuthorization
+					.get(req.getRequest().getRequestHeader().getAuthenticationToken());
+			String authorisation = GenericUtil.readServerPropertyConfigFile("authorisation");
+			if ("true".equalsIgnoreCase(authorisation)) {
+				if (!(iEncodeable instanceof AnonymousIdentityToken)) {
+					addNodeProperties(nodesToAdd, response, addNodesResult);
+				} else {
+					addNodesResult[0] = new AddNodesResult();
+					addNodesResult[0].setStatusCode(new StatusCode(StatusCodes.Bad_UserAccessDenied));
+					response.setResults(addNodesResult);
+				}
+			} else {
+				addNodeProperties(nodesToAdd, response, addNodesResult);
 			}
-			 else{
-				 addNodesResult[0]=new AddNodesResult();
-				 addNodesResult[0].setStatusCode(new StatusCode(StatusCodes.Bad_UserAccessDenied));
-				 response.setResults(addNodesResult);
-			 }
-			  }else{
-				  addNodeProperties(nodesToAdd, response, addNodesResult);
-			  }
-			 
-			    addNodesEventParam.setAuthenToken(req.getRequest().getRequestHeader().getAuthenticationToken().toString());
-			    addNodesEventParam.setReqAuditId(req.getRequest().getRequestHeader().getAuditEntryId());
-			    addNodesEventParam.setSessionId(null);
-			    EventLogUtil.writeAddNodesLog(addNodesEventParam,"");
-			req.sendResponse(response);
+
+			EventParamModel eventParamModel = new EventParamModel();
+			eventParamModel.setAuthenToken(req.getRequest().getRequestHeader().getAuthenticationToken().toString());
+			eventParamModel.setAuditId(req.getRequest().getRequestHeader().getAuditEntryId());
+			eventParamModel.setSessionId(null);
 			
+			EventModel eventModel = new EventModel("onAddNodes", eventParamModel);
+			EventLogUtil.writeToServerEventLog(eventModel);
+			
+			req.sendResponse(response);
+
 		}
+
 		private void addNodeProperties(AddNodesItem[] nodesToAdd, AddNodesResponse response,
 				AddNodesResult[] addNodesResult) {
-			//if(!("Anonymous").equalsIgnoreCase(userNameIdentityToken.getPolicyId())){ 
-			  int i=0;
-			 for(AddNodesItem addNodesItem:nodesToAdd){
-				 AddNodesResult result = addNodesResult[i] = new AddNodesResult();
-			 NodeId id=new NodeId(addNodesItem.getReferenceTypeId().getNamespaceIndex(), (UnsignedInteger)addNodesItem.getTypeDefinition().getValue());
-			 final DateTime serverTimeStamp = DateTime.currentTime();
-			// final String applicationURI = application.getApplicationUri();
-			 onReadResultsMap.put(id,  new HashMap<UnsignedInteger, DataValue>() {
+			// if(!("Anonymous").equalsIgnoreCase(userNameIdentityToken.getPolicyId())){
+			int i = 0;
+			for (AddNodesItem addNodesItem : nodesToAdd) {
+				AddNodesResult result = addNodesResult[i] = new AddNodesResult();
+				NodeId id = new NodeId(addNodesItem.getReferenceTypeId().getNamespaceIndex(),
+						(UnsignedInteger) addNodesItem.getTypeDefinition().getValue());
+				final DateTime serverTimeStamp = DateTime.currentTime();
+				// final String applicationURI =
+				// application.getApplicationUri();
+				onReadResultsMap.put(id, new HashMap<UnsignedInteger, DataValue>() {
 					/**
-				 * 
-				 */
-				private static final long serialVersionUID = 1L;
+					* 
+					*/
+					private static final long serialVersionUID = 1L;
 
 					{
 						put(Attributes.NodeId, new DataValue(new Variant(Identifiers.Server_NamespaceArray),
@@ -392,82 +360,82 @@ public class RoverAServer {
 										new Variant(new LocalizedText("The list of namespace URIs used by the server.",
 												LocalizedText.NO_LOCALE)),
 										StatusCode.GOOD, null, serverTimeStamp));
-						put(Attributes.WriteMask,
-								new DataValue(new Variant(new UnsignedInteger(0)), StatusCode.GOOD, null, serverTimeStamp));
-						put(Attributes.UserWriteMask,
-								new DataValue(new Variant(new UnsignedInteger(0)), StatusCode.GOOD, null, serverTimeStamp));
-						put(Attributes.Value,
-								new DataValue(new Variant(new String[] { "http://opcfoundation.org/UA/", "http://opcfoundation.org/UA/" }),
-										StatusCode.GOOD, null, serverTimeStamp));
+						put(Attributes.WriteMask, new DataValue(new Variant(new UnsignedInteger(0)), StatusCode.GOOD,
+								null, serverTimeStamp));
+						put(Attributes.UserWriteMask, new DataValue(new Variant(new UnsignedInteger(0)),
+								StatusCode.GOOD, null, serverTimeStamp));
+						put(Attributes.Value, new DataValue(new Variant(
+								new String[] { "http://opcfoundation.org/UA/", "http://opcfoundation.org/UA/" }),
+								StatusCode.GOOD, null, serverTimeStamp));
 					}
 				});
-			 
-			response.setResults(new AddNodesResult[]{new AddNodesResult(StatusCode.GOOD,id)});
-			i++;
-			result.setStatusCode(StatusCode.GOOD);
+
+				response.setResults(new AddNodesResult[] { new AddNodesResult(StatusCode.GOOD, id) });
+				i++;
+				result.setStatusCode(StatusCode.GOOD);
 			}
 		}
 
 		public void onAddReferences(EndpointServiceRequest<AddReferencesRequest, AddReferencesResponse> req)
 				throws ServiceFaultException {
 			throw new ServiceFaultException(ServiceFault.createServiceFault(StatusCodes.Bad_NotImplemented));
-			
+
 		}
 
 		public void onDeleteNodes(EndpointServiceRequest<DeleteNodesRequest, DeleteNodesResponse> req)
 				throws ServiceFaultException {
 			throw new ServiceFaultException(ServiceFault.createServiceFault(StatusCodes.Bad_NotImplemented));
-			
+
 		}
 
 		public void onDeleteReferences(EndpointServiceRequest<DeleteReferencesRequest, DeleteReferencesResponse> req)
 				throws ServiceFaultException {
 			throw new ServiceFaultException(ServiceFault.createServiceFault(StatusCodes.Bad_NotImplemented));
-			
+
 		}
 
 		public void onBrowse(EndpointServiceRequest<BrowseRequest, BrowseResponse> req) throws ServiceFaultException {
 			throw new ServiceFaultException(ServiceFault.createServiceFault(StatusCodes.Bad_NotImplemented));
-			
+
 		}
 
 		public void onBrowseNext(EndpointServiceRequest<BrowseNextRequest, BrowseNextResponse> req)
 				throws ServiceFaultException {
 			throw new ServiceFaultException(ServiceFault.createServiceFault(StatusCodes.Bad_NotImplemented));
-			
+
 		}
 
 		public void onTranslateBrowsePathsToNodeIds(
 				EndpointServiceRequest<TranslateBrowsePathsToNodeIdsRequest, TranslateBrowsePathsToNodeIdsResponse> req)
 				throws ServiceFaultException {
 			throw new ServiceFaultException(ServiceFault.createServiceFault(StatusCodes.Bad_NotImplemented));
-			
+
 		}
 
 		public void onRegisterNodes(EndpointServiceRequest<RegisterNodesRequest, RegisterNodesResponse> req)
 				throws ServiceFaultException {
 			throw new ServiceFaultException(ServiceFault.createServiceFault(StatusCodes.Bad_NotImplemented));
-			
+
 		}
 
 		public void onUnregisterNodes(EndpointServiceRequest<UnregisterNodesRequest, UnregisterNodesResponse> req)
 				throws ServiceFaultException {
 			throw new ServiceFaultException(ServiceFault.createServiceFault(StatusCodes.Bad_NotImplemented));
-			
+
 		}
 
 		public void onQueryFirst(EndpointServiceRequest<QueryFirstRequest, QueryFirstResponse> req)
 				throws ServiceFaultException {
 			throw new ServiceFaultException(ServiceFault.createServiceFault(StatusCodes.Bad_NotImplemented));
-			
+
 		}
 
 		public void onQueryNext(EndpointServiceRequest<QueryNextRequest, QueryNextResponse> req)
 				throws ServiceFaultException {
 			throw new ServiceFaultException(ServiceFault.createServiceFault(StatusCodes.Bad_NotImplemented));
-			
+
 		}
-		
+
 	}
 
 	static class RoverAttributeServiceHandler implements AttributeServiceSetHandler {
@@ -582,11 +550,21 @@ public class RoverAServer {
 			}
 
 			// TODO: map the required fields of request data.
-			/* ExcelUtil.auditRequest("RoverA",
-			 req.getRequest().getInput().getValue().toString());*/
-              
+			/*
+			 * ExcelUtil.auditRequest("RoverA",
+			 * req.getRequest().getInput().getValue().toString());
+			 */
+
 			response = new ReadResponse(responseHeader, results, null);
 
+			EventParamModel eventParamModel = new EventParamModel();
+			eventParamModel.setAuthenToken(req.getRequest().getRequestHeader().getAuthenticationToken().toString());
+			eventParamModel.setAuditId(req.getRequest().getRequestHeader().getAuditEntryId());
+			eventParamModel.setSessionId(null);
+			
+			EventModel eventModel = new EventModel("onRead", eventParamModel);
+			EventLogUtil.writeToServerEventLog(eventModel);
+			
 			req.sendResponse(response);
 		}
 
@@ -598,103 +576,117 @@ public class RoverAServer {
 
 			WriteRequest request = req.getRequest();
 			WriteValue[] nodesToWrite = request.getNodesToWrite();
-			AddNodesEventParam addNodesEventParam =new AddNodesEventParam();
+			
 			StatusCode[] results = null;
 			StatusCode serviceResultCode = null;
-			IEncodeable iEncodeable = userAuthorization.get(req.getRequest().getRequestHeader().getAuthenticationToken());
-		    String authorisation =GenericUtil.readServerPropertyConfigFile("authorisation");
-		   if("true".equalsIgnoreCase(authorisation)){ 
-		    if (!(iEncodeable instanceof AnonymousIdentityToken)){
-		    	
-		    	
-		   
-			if (nodesToWrite != null) {
-				// check here that Bad_TooManyOperations should not be set. No
-				// limit for operations in this implementation.
-				// Now set service result to GOOD always if nodesToWrite is not
-				// null.
-				serviceResultCode = StatusCode.GOOD;
+			IEncodeable iEncodeable = userAuthorization
+					.get(req.getRequest().getRequestHeader().getAuthenticationToken());
 
-				results = new StatusCode[nodesToWrite.length];
-				for (int i = 0; i < nodesToWrite.length; i++) {
-					// Get all attributes of the specified node
-					Map<UnsignedInteger, DataValue> attributeMap = onReadResultsMap.get(nodesToWrite[i].getNodeId());
+			String authorisation = GenericUtil.readServerPropertyConfigFile("authorisation");
+			if ("true".equalsIgnoreCase(authorisation)) {
 
-					if (attributeMap != null) {
-						if (attributeMap.containsKey(nodesToWrite[i].getAttributeId())) {
+				if (!(iEncodeable instanceof AnonymousIdentityToken)) {
 
-							if (new UnsignedInteger(13).equals(nodesToWrite[i].getAttributeId())) {
-								// Write value attribute
-								// Check data type using nodes DataType
-								// attribute
-								// Validation is done with datatypeMap to enable
-								// easy modification of valid data types
-								NodeId datatype = (NodeId) attributeMap.get(Attributes.DataType).getValue().getValue();
-								if (datatype == null) {
-									// Error: Current node does not have data
-									// type specified
-									results[i] = new StatusCode(StatusCodes.Bad_TypeMismatch);
-								} else {
-									// Data type is defined for current node
-									// Get java class corresponding to this OPC
-									// UA data type
-									Class<?> targetDataType = datatypeMap.get(datatype);
-									if (targetDataType == null) {
-										// No java data type found for this ua
-										// type
-										results[i] = new StatusCode(StatusCodes.Bad_TypeMismatch);
-									} else {
-										// Compare data type of value attribute
-										// and value from write request
-										if (targetDataType.isAssignableFrom(
-												nodesToWrite[i].getValue().getValue().getValue().getClass())) {
-											attributeMap.get(nodesToWrite[i].getAttributeId())
-													.setValue(nodesToWrite[i].getValue().getValue());
-											results[i] = StatusCode.GOOD;
-										} else {
-											// values do not match
+					if (nodesToWrite != null) {
+						// check here that Bad_TooManyOperations should not be
+						// set. No
+						// limit for operations in this implementation.
+						// Now set service result to GOOD always if nodesToWrite
+						// is not
+						// null.
+						serviceResultCode = StatusCode.GOOD;
+
+						results = new StatusCode[nodesToWrite.length];
+						for (int i = 0; i < nodesToWrite.length; i++) {
+							// Get all attributes of the specified node
+							Map<UnsignedInteger, DataValue> attributeMap = onReadResultsMap
+									.get(nodesToWrite[i].getNodeId());
+
+							if (attributeMap != null) {
+								if (attributeMap.containsKey(nodesToWrite[i].getAttributeId())) {
+
+									if (new UnsignedInteger(13).equals(nodesToWrite[i].getAttributeId())) {
+										// Write value attribute
+										// Check data type using nodes DataType
+										// attribute
+										// Validation is done with datatypeMap
+										// to enable
+										// easy modification of valid data types
+										NodeId datatype = (NodeId) attributeMap.get(Attributes.DataType).getValue()
+												.getValue();
+										if (datatype == null) {
+											// Error: Current node does not have
+											// data
+											// type specified
 											results[i] = new StatusCode(StatusCodes.Bad_TypeMismatch);
+										} else {
+											// Data type is defined for current
+											// node
+											// Get java class corresponding to
+											// this OPC
+											// UA data type
+											Class<?> targetDataType = datatypeMap.get(datatype);
+											if (targetDataType == null) {
+												// No java data type found for
+												// this ua
+												// type
+												results[i] = new StatusCode(StatusCodes.Bad_TypeMismatch);
+											} else {
+												// Compare data type of value
+												// attribute
+												// and value from write request
+												if (targetDataType.isAssignableFrom(
+														nodesToWrite[i].getValue().getValue().getValue().getClass())) {
+													attributeMap.get(nodesToWrite[i].getAttributeId())
+															.setValue(nodesToWrite[i].getValue().getValue());
+													results[i] = StatusCode.GOOD;
+												} else {
+													// values do not match
+													results[i] = new StatusCode(StatusCodes.Bad_TypeMismatch);
+												}
+											}
 										}
+									} else {
+										// Write no other attribute than value.
+										// Correct data type should also be
+										// checked
+										// here.
+										attributeMap.get(nodesToWrite[i].getAttributeId())
+												.setValue(nodesToWrite[i].getValue().getValue());
 									}
+								} else {
+									results[i] = new StatusCode(StatusCodes.Bad_AttributeIdInvalid);
 								}
 							} else {
-								// Write no other attribute than value.
-								// Correct data type should also be checked
-								// here.
-								attributeMap.get(nodesToWrite[i].getAttributeId())
-										.setValue(nodesToWrite[i].getValue().getValue());
+								results[i] = new StatusCode(StatusCodes.Bad_NodeIdInvalid);
 							}
-						} else {
-							results[i] = new StatusCode(StatusCodes.Bad_AttributeIdInvalid);
 						}
 					} else {
-						results[i] = new StatusCode(StatusCodes.Bad_NodeIdInvalid);
+						// Empty nodesToWrite array
+						serviceResultCode = new StatusCode(StatusCodes.Bad_NothingToDo);
 					}
+
+				} else {
+					results = new StatusCode[1];
+					results[0] = new StatusCode(StatusCodes.Bad_UserAccessDenied);
+
 				}
 			} else {
-				// Empty nodesToWrite array
-				serviceResultCode = new StatusCode(StatusCodes.Bad_NothingToDo);
-			}
-		 	
-		    }
-		    else{
-				   results= new StatusCode[1];
-				   results[0]=new StatusCode(StatusCodes.Bad_UserAccessDenied);
-				   
-			   }
-		   }else{
-			   
-			   if (nodesToWrite != null) {
-					// check here that Bad_TooManyOperations should not be set. No
+
+				if (nodesToWrite != null) {
+					// check here that Bad_TooManyOperations should not be set.
+					// No
 					// limit for operations in this implementation.
-					// Now set service result to GOOD always if nodesToWrite is not
+					// Now set service result to GOOD always if nodesToWrite is
+					// not
 					// null.
 					serviceResultCode = StatusCode.GOOD;
 
 					results = new StatusCode[nodesToWrite.length];
 					for (int i = 0; i < nodesToWrite.length; i++) {
 						// Get all attributes of the specified node
-						Map<UnsignedInteger, DataValue> attributeMap = onReadResultsMap.get(nodesToWrite[i].getNodeId());
+						Map<UnsignedInteger, DataValue> attributeMap = onReadResultsMap
+								.get(nodesToWrite[i].getNodeId());
 
 						if (attributeMap != null) {
 							if (attributeMap.containsKey(nodesToWrite[i].getAttributeId())) {
@@ -703,24 +695,30 @@ public class RoverAServer {
 									// Write value attribute
 									// Check data type using nodes DataType
 									// attribute
-									// Validation is done with datatypeMap to enable
+									// Validation is done with datatypeMap to
+									// enable
 									// easy modification of valid data types
-									NodeId datatype = (NodeId) attributeMap.get(Attributes.DataType).getValue().getValue();
+									NodeId datatype = (NodeId) attributeMap.get(Attributes.DataType).getValue()
+											.getValue();
 									if (datatype == null) {
-										// Error: Current node does not have data
+										// Error: Current node does not have
+										// data
 										// type specified
 										results[i] = new StatusCode(StatusCodes.Bad_TypeMismatch);
 									} else {
 										// Data type is defined for current node
-										// Get java class corresponding to this OPC
+										// Get java class corresponding to this
+										// OPC
 										// UA data type
 										Class<?> targetDataType = datatypeMap.get(datatype);
 										if (targetDataType == null) {
-											// No java data type found for this ua
+											// No java data type found for this
+											// ua
 											// type
 											results[i] = new StatusCode(StatusCodes.Bad_TypeMismatch);
 										} else {
-											// Compare data type of value attribute
+											// Compare data type of value
+											// attribute
 											// and value from write request
 											if (targetDataType.isAssignableFrom(
 													nodesToWrite[i].getValue().getValue().getValue().getClass())) {
@@ -751,25 +749,31 @@ public class RoverAServer {
 					// Empty nodesToWrite array
 					serviceResultCode = new StatusCode(StatusCodes.Bad_NothingToDo);
 				}
-			   
-		   }
+
+			}
 			WriteResponse response = new WriteResponse(null, results, null);
 			// Set response header to pass ctt check_responseHeader_error.js
 			ResponseHeader h = new ResponseHeader(DateTime.currentTime(), request.getRequestHeader().getRequestHandle(),
 					serviceResultCode, null, null, null);
 			response.setResponseHeader(h);
-			addNodesEventParam.setAuthenToken(req.getRequest().getRequestHeader().getAuthenticationToken().toString());
-		    addNodesEventParam.setReqAuditId(req.getRequest().getRequestHeader().getAuditEntryId());
-		    addNodesEventParam.setSessionId(null);
-		    EventLogUtil.writeAddNodesLog(addNodesEventParam, "WriteNode");
+			
+			EventParamModel eventParamModel = new EventParamModel();
+			eventParamModel.setAuthenToken(req.getRequest().getRequestHeader().getAuthenticationToken().toString());
+			eventParamModel.setAuditId(req.getRequest().getRequestHeader().getAuditEntryId());
+			eventParamModel.setSessionId(null);
+			
+			EventModel eventModel = new EventModel("onWrite", eventParamModel);
+			EventLogUtil.writeToServerEventLog(eventModel);
+			
 			req.sendResponse(response);
 		}
 
 	}
 
-	static class RoverAServerExample extends Server implements SessionServiceSetHandler, MethodServiceSetHandler  {
-	//	public static final NodeId LIST_SOLVERS = new NodeId(2, "ListSolvers");
-		
+	static class RoverAServerExample extends Server implements SessionServiceSetHandler, MethodServiceSetHandler {
+		// public static final NodeId LIST_SOLVERS = new NodeId(2,
+		// "ListSolvers");
+
 		@SuppressWarnings("serial")
 		public RoverAServerExample(Application application, String applicationName) throws Exception {
 			super(application);
@@ -790,12 +794,12 @@ public class RoverAServer {
 
 			// Add User Token Policies
 			String setanonymous = GenericUtil.readServerPropertyConfigFile("ANONYMOUS");
-			if("true".equalsIgnoreCase(setanonymous)){
-			// Add User Token Policies
-			addUserTokenPolicy(UserTokenPolicy.ANONYMOUS);
+			if ("true".equalsIgnoreCase(setanonymous)) {
+				// Add User Token Policies
+				addUserTokenPolicy(UserTokenPolicy.ANONYMOUS);
 			}
 			addUserTokenPolicy(UserTokenPolicy.SECURE_USERNAME_PASSWORD);
-			//addUserTokenPolicy(UserTokenPolicy.);
+			// addUserTokenPolicy(UserTokenPolicy.);
 
 			// Create an endpoint for each network interface
 			String hostname = EndpointUtil.getHostname();
@@ -825,262 +829,283 @@ public class RoverAServer {
 
 			final String applicationURI = application.getApplicationUri();
 
-			onReadResultsMap.put(Identifiers.Server_ServerStatus_CurrentTime, new HashMap<UnsignedInteger, DataValue>() {
-		        {
-		          put(Attributes.Value, new DataValue(new Variant(serverTimeStamp), StatusCode.GOOD, null, serverTimeStamp));
-		        }
-		      });
-		      onReadResultsMap.put(Identifiers.Server_ServerCapabilities_LocaleIdArray,
-		          new HashMap<UnsignedInteger, DataValue>() {
-		            {
-		              put(Attributes.Value, new DataValue(new Variant(new String[1]), StatusCode.GOOD, null, serverTimeStamp));
-		            }
-		          });
+			onReadResultsMap.put(Identifiers.Server_ServerStatus_CurrentTime,
+					new HashMap<UnsignedInteger, DataValue>() {
+						{
+							put(Attributes.Value, new DataValue(new Variant(serverTimeStamp), StatusCode.GOOD, null,
+									serverTimeStamp));
+						}
+					});
+			onReadResultsMap.put(Identifiers.Server_ServerCapabilities_LocaleIdArray,
+					new HashMap<UnsignedInteger, DataValue>() {
+						{
+							put(Attributes.Value,
+									new DataValue(new Variant(new String[1]), StatusCode.GOOD, null, serverTimeStamp));
+						}
+					});
 
-		      onReadResultsMap.put(Identifiers.Server_ServerStatus, new HashMap<UnsignedInteger, DataValue>() {
-		        {
-		          put(Attributes.NodeId,
-		              new DataValue(new Variant(Identifiers.Server_ServerStatus), StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.NodeClass,
-		              new DataValue(new Variant(NodeClass.Variable), StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.BrowseName,
-		              new DataValue(new Variant(new QualifiedName("ServerStatus")), StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.DisplayName,
-		              new DataValue(new Variant(new LocalizedText("ServerStatus", LocalizedText.NO_LOCALE)), StatusCode.GOOD,
-		                  null, serverTimeStamp));
-		          put(Attributes.Description,
-		              new DataValue(
-		                  new Variant(new LocalizedText("The current status of the server.", LocalizedText.NO_LOCALE)),
-		                  StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.WriteMask,
-		              new DataValue(new Variant(new UnsignedInteger(0)), StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.UserWriteMask,
-		              new DataValue(new Variant(new UnsignedInteger(0)), StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.Value, new DataValue(null, StatusCode.GOOD, null, serverTimeStamp));
-		        }
-		      });
+			onReadResultsMap.put(Identifiers.Server_ServerStatus, new HashMap<UnsignedInteger, DataValue>() {
+				{
+					put(Attributes.NodeId, new DataValue(new Variant(Identifiers.Server_ServerStatus), StatusCode.GOOD,
+							null, serverTimeStamp));
+					put(Attributes.NodeClass,
+							new DataValue(new Variant(NodeClass.Variable), StatusCode.GOOD, null, serverTimeStamp));
+					put(Attributes.BrowseName, new DataValue(new Variant(new QualifiedName("ServerStatus")),
+							StatusCode.GOOD, null, serverTimeStamp));
+					put(Attributes.DisplayName,
+							new DataValue(new Variant(new LocalizedText("ServerStatus", LocalizedText.NO_LOCALE)),
+									StatusCode.GOOD, null, serverTimeStamp));
+					put(Attributes.Description,
+							new DataValue(new Variant(
+									new LocalizedText("The current status of the server.", LocalizedText.NO_LOCALE)),
+									StatusCode.GOOD, null, serverTimeStamp));
+					put(Attributes.WriteMask,
+							new DataValue(new Variant(new UnsignedInteger(0)), StatusCode.GOOD, null, serverTimeStamp));
+					put(Attributes.UserWriteMask,
+							new DataValue(new Variant(new UnsignedInteger(0)), StatusCode.GOOD, null, serverTimeStamp));
+					put(Attributes.Value, new DataValue(null, StatusCode.GOOD, null, serverTimeStamp));
+				}
+			});
 
-		      onReadResultsMap.put(Identifiers.Server_ServerStatus_State, new HashMap<UnsignedInteger, DataValue>() {
-		        {
-		          put(Attributes.NodeId, new DataValue(new Variant(Identifiers.Server_ServerStatus_State), StatusCode.GOOD,
-		              null, serverTimeStamp));
-		          put(Attributes.NodeClass,
-		              new DataValue(new Variant(NodeClass.Variable), StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.BrowseName,
-		              new DataValue(new Variant(new QualifiedName("State")), StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.DisplayName, new DataValue(new Variant(new LocalizedText("State", LocalizedText.NO_LOCALE)),
-		              StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.Description, new DataValue(new Variant(new LocalizedText("", LocalizedText.NO_LOCALE)),
-		              StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.WriteMask,
-		              new DataValue(new Variant(new UnsignedInteger(0)), StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.UserWriteMask,
-		              new DataValue(new Variant(new UnsignedInteger(0)), StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.Value,
-		              new DataValue(new Variant(new UnsignedInteger(0)), StatusCode.GOOD, null, serverTimeStamp));
-		        }
-		      });
-		      onReadResultsMap.put(Identifiers.Server_NamespaceArray, new HashMap<UnsignedInteger, DataValue>() {
-		        {
-		          put(Attributes.NodeId,
-		              new DataValue(new Variant(Identifiers.Server_NamespaceArray), StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.NodeClass,
-		              new DataValue(new Variant(NodeClass.Variable), StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.BrowseName,
-		              new DataValue(new Variant(new QualifiedName("NamespaceArray")), StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.DisplayName,
-		              new DataValue(new Variant(new LocalizedText("NamespaceArray", LocalizedText.NO_LOCALE)), StatusCode.GOOD,
-		                  null, serverTimeStamp));
-		          put(Attributes.Description,
-		              new DataValue(
-		                  new Variant(
-		                      new LocalizedText("The list of namespace URIs used by the server.", LocalizedText.NO_LOCALE)),
-		                  StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.WriteMask,
-		              new DataValue(new Variant(new UnsignedInteger(0)), StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.UserWriteMask,
-		              new DataValue(new Variant(new UnsignedInteger(0)), StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.Value,
-		              new DataValue(new Variant(new String[] {"http://opcfoundation.org/UA/", applicationURI}), StatusCode.GOOD,
-		                  null, serverTimeStamp));
-		        }
-		      });
+			onReadResultsMap.put(Identifiers.Server_ServerStatus_State, new HashMap<UnsignedInteger, DataValue>() {
+				{
+					put(Attributes.NodeId, new DataValue(new Variant(Identifiers.Server_ServerStatus_State),
+							StatusCode.GOOD, null, serverTimeStamp));
+					put(Attributes.NodeClass,
+							new DataValue(new Variant(NodeClass.Variable), StatusCode.GOOD, null, serverTimeStamp));
+					put(Attributes.BrowseName, new DataValue(new Variant(new QualifiedName("State")), StatusCode.GOOD,
+							null, serverTimeStamp));
+					put(Attributes.DisplayName,
+							new DataValue(new Variant(new LocalizedText("State", LocalizedText.NO_LOCALE)),
+									StatusCode.GOOD, null, serverTimeStamp));
+					put(Attributes.Description,
+							new DataValue(new Variant(new LocalizedText("", LocalizedText.NO_LOCALE)), StatusCode.GOOD,
+									null, serverTimeStamp));
+					put(Attributes.WriteMask,
+							new DataValue(new Variant(new UnsignedInteger(0)), StatusCode.GOOD, null, serverTimeStamp));
+					put(Attributes.UserWriteMask,
+							new DataValue(new Variant(new UnsignedInteger(0)), StatusCode.GOOD, null, serverTimeStamp));
+					put(Attributes.Value,
+							new DataValue(new Variant(new UnsignedInteger(0)), StatusCode.GOOD, null, serverTimeStamp));
+				}
+			});
+			onReadResultsMap.put(Identifiers.Server_NamespaceArray, new HashMap<UnsignedInteger, DataValue>() {
+				{
+					put(Attributes.NodeId, new DataValue(new Variant(Identifiers.Server_NamespaceArray),
+							StatusCode.GOOD, null, serverTimeStamp));
+					put(Attributes.NodeClass,
+							new DataValue(new Variant(NodeClass.Variable), StatusCode.GOOD, null, serverTimeStamp));
+					put(Attributes.BrowseName, new DataValue(new Variant(new QualifiedName("NamespaceArray")),
+							StatusCode.GOOD, null, serverTimeStamp));
+					put(Attributes.DisplayName,
+							new DataValue(new Variant(new LocalizedText("NamespaceArray", LocalizedText.NO_LOCALE)),
+									StatusCode.GOOD, null, serverTimeStamp));
+					put(Attributes.Description,
+							new DataValue(
+									new Variant(new LocalizedText("The list of namespace URIs used by the server.",
+											LocalizedText.NO_LOCALE)),
+									StatusCode.GOOD, null, serverTimeStamp));
+					put(Attributes.WriteMask,
+							new DataValue(new Variant(new UnsignedInteger(0)), StatusCode.GOOD, null, serverTimeStamp));
+					put(Attributes.UserWriteMask,
+							new DataValue(new Variant(new UnsignedInteger(0)), StatusCode.GOOD, null, serverTimeStamp));
+					put(Attributes.Value,
+							new DataValue(new Variant(new String[] { "http://opcfoundation.org/UA/", applicationURI }),
+									StatusCode.GOOD, null, serverTimeStamp));
+				}
+			});
 
-		      onReadResultsMap.put(Identifiers.Server_ServerArray, new HashMap<UnsignedInteger, DataValue>() {
-		        {
-		          put(Attributes.NodeId,
-		              new DataValue(new Variant(Identifiers.Server_ServerArray), StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.NodeClass,
-		              new DataValue(new Variant(NodeClass.Variable), StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.BrowseName,
-		              new DataValue(new Variant(new QualifiedName("ServerArray")), StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.DisplayName,
-		              new DataValue(new Variant(new LocalizedText("ServerArray", LocalizedText.NO_LOCALE)), StatusCode.GOOD,
-		                  null, serverTimeStamp));
-		          put(Attributes.Description,
-		              new DataValue(
-		                  new Variant(
-		                      new LocalizedText("The list of server URIs used by the server.", LocalizedText.NO_LOCALE)),
-		                  StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.WriteMask,
-		              new DataValue(new Variant(new UnsignedInteger(0)), StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.UserWriteMask,
-		              new DataValue(new Variant(new UnsignedInteger(0)), StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.Value, new DataValue(new Variant(new String[] {applicationURI}), StatusCode.GOOD,
-		              serverTimeStamp, serverTimeStamp));
-		        }
-		      });
-		      onReadResultsMap.put(Identifiers.Server_ServerStatus_BuildInfo_ProductName,
-		          new HashMap<UnsignedInteger, DataValue>() {
-		            {
-		              put(Attributes.Value,
-		                  new DataValue(new Variant("SampleNanoServer"), StatusCode.GOOD, null, serverTimeStamp));
-		            }
-		          });
-		      onReadResultsMap.put(Identifiers.Server_ServerStatus_BuildInfo_ManufacturerName,
-		          new HashMap<UnsignedInteger, DataValue>() {
-		            {
-		              put(Attributes.Value, new DataValue(null, StatusCode.GOOD, null, serverTimeStamp));
-		            }
-		          });
-		      onReadResultsMap.put(Identifiers.Server_ServerStatus_BuildInfo_SoftwareVersion,
-		          new HashMap<UnsignedInteger, DataValue>() {
-		            {
-		              put(Attributes.Value, new DataValue(null, StatusCode.GOOD, null, serverTimeStamp));
-		            }
-		          });
-		      onReadResultsMap.put(Identifiers.Server_ServerStatus_BuildInfo_BuildDate,
-		          new HashMap<UnsignedInteger, DataValue>() {
-		            {
-		              put(Attributes.Value, new DataValue(new Variant(DateTime.parseDateTime("2014-12-30T00:00:00Z")),
-		                  StatusCode.GOOD, null, serverTimeStamp));
-		            }
-		          });
+			onReadResultsMap.put(Identifiers.Server_ServerArray, new HashMap<UnsignedInteger, DataValue>() {
+				{
+					put(Attributes.NodeId, new DataValue(new Variant(Identifiers.Server_ServerArray), StatusCode.GOOD,
+							null, serverTimeStamp));
+					put(Attributes.NodeClass,
+							new DataValue(new Variant(NodeClass.Variable), StatusCode.GOOD, null, serverTimeStamp));
+					put(Attributes.BrowseName, new DataValue(new Variant(new QualifiedName("ServerArray")),
+							StatusCode.GOOD, null, serverTimeStamp));
+					put(Attributes.DisplayName,
+							new DataValue(new Variant(new LocalizedText("ServerArray", LocalizedText.NO_LOCALE)),
+									StatusCode.GOOD, null, serverTimeStamp));
+					put(Attributes.Description, new DataValue(new Variant(
+							new LocalizedText("The list of server URIs used by the server.", LocalizedText.NO_LOCALE)),
+							StatusCode.GOOD, null, serverTimeStamp));
+					put(Attributes.WriteMask,
+							new DataValue(new Variant(new UnsignedInteger(0)), StatusCode.GOOD, null, serverTimeStamp));
+					put(Attributes.UserWriteMask,
+							new DataValue(new Variant(new UnsignedInteger(0)), StatusCode.GOOD, null, serverTimeStamp));
+					put(Attributes.Value, new DataValue(new Variant(new String[] { applicationURI }), StatusCode.GOOD,
+							serverTimeStamp, serverTimeStamp));
+				}
+			});
+			onReadResultsMap.put(Identifiers.Server_ServerStatus_BuildInfo_ProductName,
+					new HashMap<UnsignedInteger, DataValue>() {
+						{
+							put(Attributes.Value, new DataValue(new Variant("SampleNanoServer"), StatusCode.GOOD, null,
+									serverTimeStamp));
+						}
+					});
+			onReadResultsMap.put(Identifiers.Server_ServerStatus_BuildInfo_ManufacturerName,
+					new HashMap<UnsignedInteger, DataValue>() {
+						{
+							put(Attributes.Value, new DataValue(null, StatusCode.GOOD, null, serverTimeStamp));
+						}
+					});
+			onReadResultsMap.put(Identifiers.Server_ServerStatus_BuildInfo_SoftwareVersion,
+					new HashMap<UnsignedInteger, DataValue>() {
+						{
+							put(Attributes.Value, new DataValue(null, StatusCode.GOOD, null, serverTimeStamp));
+						}
+					});
+			onReadResultsMap.put(Identifiers.Server_ServerStatus_BuildInfo_BuildDate,
+					new HashMap<UnsignedInteger, DataValue>() {
+						{
+							put(Attributes.Value,
+									new DataValue(new Variant(DateTime.parseDateTime("2014-12-30T00:00:00Z")),
+											StatusCode.GOOD, null, serverTimeStamp));
+						}
+					});
 
-		      onReadResultsMap.put(Identifiers.Server_ServerStatus_StartTime, new HashMap<UnsignedInteger, DataValue>() {
-		        {
-		          put(Attributes.Value, new DataValue(new Variant(serverTimeStamp), StatusCode.GOOD, null, serverTimeStamp));
-		        }
-		      });
+			onReadResultsMap.put(Identifiers.Server_ServerStatus_StartTime, new HashMap<UnsignedInteger, DataValue>() {
+				{
+					put(Attributes.Value,
+							new DataValue(new Variant(serverTimeStamp), StatusCode.GOOD, null, serverTimeStamp));
+				}
+			});
 
-		      onReadResultsMap.put(Identifiers.Server_ServerStatus_SecondsTillShutdown,
-		          new HashMap<UnsignedInteger, DataValue>() {
-		            {
-		              put(Attributes.Value, new DataValue(null, StatusCode.GOOD, null, serverTimeStamp));
-		            }
-		          });
+			onReadResultsMap.put(Identifiers.Server_ServerStatus_SecondsTillShutdown,
+					new HashMap<UnsignedInteger, DataValue>() {
+						{
+							put(Attributes.Value, new DataValue(null, StatusCode.GOOD, null, serverTimeStamp));
+						}
+					});
 
-		      onReadResultsMap.put(Identifiers.Server_ServerStatus_ShutdownReason, new HashMap<UnsignedInteger, DataValue>() {
-		        {
-		          put(Attributes.Value, new DataValue(null, StatusCode.GOOD, null, serverTimeStamp));
-		        }
-		      });
+			onReadResultsMap.put(Identifiers.Server_ServerStatus_ShutdownReason,
+					new HashMap<UnsignedInteger, DataValue>() {
+						{
+							put(Attributes.Value, new DataValue(null, StatusCode.GOOD, null, serverTimeStamp));
+						}
+					});
 
-		      onReadResultsMap.put(Identifiers.Server_ServerStatus_BuildInfo, new HashMap<UnsignedInteger, DataValue>() {
-		        {
-		          put(Attributes.Value, new DataValue(null, StatusCode.GOOD, null, serverTimeStamp));
-		        }
-		      });
+			onReadResultsMap.put(Identifiers.Server_ServerStatus_BuildInfo, new HashMap<UnsignedInteger, DataValue>() {
+				{
+					put(Attributes.Value, new DataValue(null, StatusCode.GOOD, null, serverTimeStamp));
+				}
+			});
 
-		      onReadResultsMap.put(Identifiers.Server_ServerCapabilities, new HashMap<UnsignedInteger, DataValue>() {
-		        {
-		          put(Attributes.NodeId, new DataValue(new Variant(Identifiers.Server_ServerCapabilities), StatusCode.GOOD,
-		              null, serverTimeStamp));
-		          put(Attributes.NodeClass,
-		              new DataValue(new Variant(NodeClass.Object), StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.BrowseName, new DataValue(new Variant(new QualifiedName("ServerCapabilities")),
-		              StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.DisplayName,
-		              new DataValue(new Variant(new LocalizedText("ServerCapabilities", LocalizedText.NO_LOCALE)),
-		                  StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.Description,
-		              new DataValue(new Variant(
-		                  new LocalizedText("Describes the capabilities supported by the server.", LocalizedText.NO_LOCALE)),
-		                  StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.WriteMask,
-		              new DataValue(new Variant(new UnsignedInteger(0)), StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.UserWriteMask,
-		              new DataValue(new Variant(new UnsignedInteger(0)), StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.EventNotifier,
-		              new DataValue(new Variant(new Byte((byte) 0)), StatusCode.GOOD, null, serverTimeStamp));
-		        }
-		      });
+			onReadResultsMap.put(Identifiers.Server_ServerCapabilities, new HashMap<UnsignedInteger, DataValue>() {
+				{
+					put(Attributes.NodeId, new DataValue(new Variant(Identifiers.Server_ServerCapabilities),
+							StatusCode.GOOD, null, serverTimeStamp));
+					put(Attributes.NodeClass,
+							new DataValue(new Variant(NodeClass.Object), StatusCode.GOOD, null, serverTimeStamp));
+					put(Attributes.BrowseName, new DataValue(new Variant(new QualifiedName("ServerCapabilities")),
+							StatusCode.GOOD, null, serverTimeStamp));
+					put(Attributes.DisplayName,
+							new DataValue(new Variant(new LocalizedText("ServerCapabilities", LocalizedText.NO_LOCALE)),
+									StatusCode.GOOD, null, serverTimeStamp));
+					put(Attributes.Description,
+							new DataValue(
+									new Variant(new LocalizedText("Describes the capabilities supported by the server.",
+											LocalizedText.NO_LOCALE)),
+									StatusCode.GOOD, null, serverTimeStamp));
+					put(Attributes.WriteMask,
+							new DataValue(new Variant(new UnsignedInteger(0)), StatusCode.GOOD, null, serverTimeStamp));
+					put(Attributes.UserWriteMask,
+							new DataValue(new Variant(new UnsignedInteger(0)), StatusCode.GOOD, null, serverTimeStamp));
+					put(Attributes.EventNotifier,
+							new DataValue(new Variant(new Byte((byte) 0)), StatusCode.GOOD, null, serverTimeStamp));
+				}
+			});
 
-		      onReadResultsMap.put(Identifiers.Server_ServerCapabilities_MaxBrowseContinuationPoints,
-		          new HashMap<UnsignedInteger, DataValue>() {
-		            {
-		              put(Attributes.NodeId,
-		                  new DataValue(new Variant(Identifiers.Server_ServerCapabilities_MaxBrowseContinuationPoints),
-		                      StatusCode.GOOD, null, serverTimeStamp));
-		              put(Attributes.NodeClass,
-		                  new DataValue(new Variant(NodeClass.Variable), StatusCode.GOOD, null, serverTimeStamp));
-		              put(Attributes.BrowseName, new DataValue(new Variant(new QualifiedName("MaxBrowseContinuationPoints")),
-		                  StatusCode.GOOD, null, serverTimeStamp));
-		              put(Attributes.DisplayName,
-		                  new DataValue(new Variant(new LocalizedText("MaxBrowseContinuationPoints", LocalizedText.NO_LOCALE)),
-		                      StatusCode.GOOD, null, serverTimeStamp));
-		              put(Attributes.Description,
-		                  new DataValue(new Variant(
-		                      new LocalizedText("The maximum number of continuation points for Browse operations per session.",
-		                          LocalizedText.NO_LOCALE)),
-		                      StatusCode.GOOD, null, serverTimeStamp));
-		              put(Attributes.WriteMask,
-		                  new DataValue(new Variant(new UnsignedInteger(0)), StatusCode.GOOD, null, serverTimeStamp));
-		              put(Attributes.UserWriteMask,
-		                  new DataValue(new Variant(new UnsignedInteger(0)), StatusCode.GOOD, null, serverTimeStamp));
-		              put(Attributes.Value,
-		                  new DataValue(new Variant(new UnsignedInteger(1)), StatusCode.GOOD, null, serverTimeStamp));
-		              put(Attributes.DataType,
-		                  new DataValue(new Variant(Identifiers.UInt16), StatusCode.GOOD, null, serverTimeStamp));
-		              put(Attributes.ValueRank, new DataValue(new Variant(-2), StatusCode.GOOD, null, serverTimeStamp));
-		              put(Attributes.ArrayDimensions, new DataValue(null, StatusCode.GOOD, null, serverTimeStamp));
-		              put(Attributes.AccessLevel,
-		                  new DataValue(new Variant(AccessLevel.CurrentRead), StatusCode.GOOD, null, serverTimeStamp));
-		              put(Attributes.UserAccessLevel,
-		                  new DataValue(new Variant(AccessLevel.CurrentRead), StatusCode.GOOD, null, serverTimeStamp));
-		              put(Attributes.MinimumSamplingInterval,
-		                  new DataValue(new Variant(0.0), StatusCode.GOOD, null, serverTimeStamp));
-		              put(Attributes.Historizing, new DataValue(new Variant(false), StatusCode.GOOD, null, serverTimeStamp));
-		            }
-		          });
+			onReadResultsMap.put(Identifiers.Server_ServerCapabilities_MaxBrowseContinuationPoints,
+					new HashMap<UnsignedInteger, DataValue>() {
+						{
+							put(Attributes.NodeId,
+									new DataValue(
+											new Variant(
+													Identifiers.Server_ServerCapabilities_MaxBrowseContinuationPoints),
+											StatusCode.GOOD, null, serverTimeStamp));
+							put(Attributes.NodeClass, new DataValue(new Variant(NodeClass.Variable), StatusCode.GOOD,
+									null, serverTimeStamp));
+							put(Attributes.BrowseName,
+									new DataValue(new Variant(new QualifiedName("MaxBrowseContinuationPoints")),
+											StatusCode.GOOD, null, serverTimeStamp));
+							put(Attributes.DisplayName,
+									new DataValue(new Variant(
+											new LocalizedText("MaxBrowseContinuationPoints", LocalizedText.NO_LOCALE)),
+											StatusCode.GOOD, null, serverTimeStamp));
+							put(Attributes.Description,
+									new DataValue(
+											new Variant(new LocalizedText(
+													"The maximum number of continuation points for Browse operations per session.",
+													LocalizedText.NO_LOCALE)),
+											StatusCode.GOOD, null, serverTimeStamp));
+							put(Attributes.WriteMask, new DataValue(new Variant(new UnsignedInteger(0)),
+									StatusCode.GOOD, null, serverTimeStamp));
+							put(Attributes.UserWriteMask, new DataValue(new Variant(new UnsignedInteger(0)),
+									StatusCode.GOOD, null, serverTimeStamp));
+							put(Attributes.Value, new DataValue(new Variant(new UnsignedInteger(1)), StatusCode.GOOD,
+									null, serverTimeStamp));
+							put(Attributes.DataType, new DataValue(new Variant(Identifiers.UInt16), StatusCode.GOOD,
+									null, serverTimeStamp));
+							put(Attributes.ValueRank,
+									new DataValue(new Variant(-2), StatusCode.GOOD, null, serverTimeStamp));
+							put(Attributes.ArrayDimensions,
+									new DataValue(null, StatusCode.GOOD, null, serverTimeStamp));
+							put(Attributes.AccessLevel, new DataValue(new Variant(AccessLevel.CurrentRead),
+									StatusCode.GOOD, null, serverTimeStamp));
+							put(Attributes.UserAccessLevel, new DataValue(new Variant(AccessLevel.CurrentRead),
+									StatusCode.GOOD, null, serverTimeStamp));
+							put(Attributes.MinimumSamplingInterval,
+									new DataValue(new Variant(0.0), StatusCode.GOOD, null, serverTimeStamp));
+							put(Attributes.Historizing,
+									new DataValue(new Variant(false), StatusCode.GOOD, null, serverTimeStamp));
+						}
+					});
 
-		      onReadResultsMap.put(Identifiers.Server_ServerDiagnostics_EnabledFlag, new HashMap<UnsignedInteger, DataValue>() {
-		        {
-		          put(Attributes.NodeId, new DataValue(new Variant(Identifiers.Server_ServerDiagnostics_EnabledFlag),
-		              StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.NodeClass,
-		              new DataValue(new Variant(NodeClass.Variable), StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.BrowseName,
-		              new DataValue(new Variant(new QualifiedName("EnabledFlag")), StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.DisplayName,
-		              new DataValue(new Variant(new LocalizedText("EnabledFlag", LocalizedText.NO_LOCALE)), StatusCode.GOOD,
-		                  null, serverTimeStamp));
-		          put(Attributes.Description,
-		              new DataValue(
-		                  new Variant(
-		                      new LocalizedText("If TRUE the diagnostics collection is enabled.", LocalizedText.NO_LOCALE)),
-		                  StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.WriteMask,
-		              new DataValue(new Variant(new UnsignedInteger(0)), StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.UserWriteMask,
-		              new DataValue(new Variant(new UnsignedInteger(0)), StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.Value, new DataValue(new Variant(false), StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.DataType,
-		              new DataValue(new Variant(Identifiers.Boolean), StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.ValueRank, new DataValue(new Variant(-2), StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.ArrayDimensions, new DataValue(null, StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.AccessLevel,
-		              new DataValue(new Variant(AccessLevel.CurrentRead), StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.UserAccessLevel,
-		              new DataValue(new Variant(AccessLevel.CurrentRead), StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.MinimumSamplingInterval,
-		              new DataValue(new Variant(0.0), StatusCode.GOOD, null, serverTimeStamp));
-		          put(Attributes.Historizing, new DataValue(new Variant(false), StatusCode.GOOD, null, serverTimeStamp));
-		        }
-		      });
-			
-			
-			
+			onReadResultsMap.put(Identifiers.Server_ServerDiagnostics_EnabledFlag,
+					new HashMap<UnsignedInteger, DataValue>() {
+						{
+							put(Attributes.NodeId,
+									new DataValue(new Variant(Identifiers.Server_ServerDiagnostics_EnabledFlag),
+											StatusCode.GOOD, null, serverTimeStamp));
+							put(Attributes.NodeClass, new DataValue(new Variant(NodeClass.Variable), StatusCode.GOOD,
+									null, serverTimeStamp));
+							put(Attributes.BrowseName, new DataValue(new Variant(new QualifiedName("EnabledFlag")),
+									StatusCode.GOOD, null, serverTimeStamp));
+							put(Attributes.DisplayName,
+									new DataValue(
+											new Variant(new LocalizedText("EnabledFlag", LocalizedText.NO_LOCALE)),
+											StatusCode.GOOD, null, serverTimeStamp));
+							put(Attributes.Description,
+									new DataValue(
+											new Variant(
+													new LocalizedText("If TRUE the diagnostics collection is enabled.",
+															LocalizedText.NO_LOCALE)),
+											StatusCode.GOOD, null, serverTimeStamp));
+							put(Attributes.WriteMask, new DataValue(new Variant(new UnsignedInteger(0)),
+									StatusCode.GOOD, null, serverTimeStamp));
+							put(Attributes.UserWriteMask, new DataValue(new Variant(new UnsignedInteger(0)),
+									StatusCode.GOOD, null, serverTimeStamp));
+							put(Attributes.Value,
+									new DataValue(new Variant(false), StatusCode.GOOD, null, serverTimeStamp));
+							put(Attributes.DataType, new DataValue(new Variant(Identifiers.Boolean), StatusCode.GOOD,
+									null, serverTimeStamp));
+							put(Attributes.ValueRank,
+									new DataValue(new Variant(-2), StatusCode.GOOD, null, serverTimeStamp));
+							put(Attributes.ArrayDimensions,
+									new DataValue(null, StatusCode.GOOD, null, serverTimeStamp));
+							put(Attributes.AccessLevel, new DataValue(new Variant(AccessLevel.CurrentRead),
+									StatusCode.GOOD, null, serverTimeStamp));
+							put(Attributes.UserAccessLevel, new DataValue(new Variant(AccessLevel.CurrentRead),
+									StatusCode.GOOD, null, serverTimeStamp));
+							put(Attributes.MinimumSamplingInterval,
+									new DataValue(new Variant(0.0), StatusCode.GOOD, null, serverTimeStamp));
+							put(Attributes.Historizing,
+									new DataValue(new Variant(false), StatusCode.GOOD, null, serverTimeStamp));
+						}
+					});
+
 			// *******************************************************************************
 			// Put all data type mappings in one HashMap for better readability
 			// and performance
@@ -1097,17 +1122,18 @@ public class RoverAServer {
 		public void onActivateSession(
 				EndpointServiceRequest<ActivateSessionRequest, ActivateSessionResponse> msgExchange)
 				throws ServiceFaultException {
-            
+
 			ActivateSessionRequest request = msgExchange.getRequest();
-			
+
 			StatusCode statusCode = null;
 			ActivateSessionResponse response = new ActivateSessionResponse();
-			ActiveSessionEventParam	 activeSessionEventParam=new ActiveSessionEventParam();
-			activeSessionEventParam.setAuthenToken(request.getRequestHeader().getAuthenticationToken().getValue().toString());
-			//activeSessionEventParam.setSessionId(request.getRequestHeader().get);
+			ActiveSessionEventParam activeSessionEventParam = new ActiveSessionEventParam();
+			activeSessionEventParam
+					.setAuthenToken(request.getRequestHeader().getAuthenticationToken().getValue().toString());
+			// activeSessionEventParam.setSessionId(request.getRequestHeader().get);
 			RequestHeader requestHeader = request.getRequestHeader();
 			NodeId authenticationToken = requestHeader.getAuthenticationToken();
-			
+
 			if (!sessions.contains(authenticationToken)) {
 				// This session is not valid
 				statusCode = new StatusCode(StatusCodes.Bad_SessionClosed);
@@ -1148,22 +1174,23 @@ public class RoverAServer {
 
 					IEncodeable uit = request.getUserIdentityToken().decode(getEncoderContext());
 					userAuthorization.put(authenticationToken, uit);
+
 					if (uit instanceof UserNameIdentityToken) {
 						UserNameIdentityToken userNameIdentityToken = (UserNameIdentityToken) uit;
-						
+
 						String userName = userNameIdentityToken.getUserName();
 						activeSessionEventParam.setUserName(userName);
 						String policyId = userNameIdentityToken.getPolicyId();
 						String encryptionAlgorithm = userNameIdentityToken.getEncryptionAlgorithm();
-						String passkey = GenericUtil.readServerPropertyConfigFile(userName); 
+						String passkey = GenericUtil.readServerPropertyConfigFile(userName);
 						if (userName == null) {
 							statusCode = new StatusCode(StatusCodes.Bad_IdentityTokenInvalid);
 						} else if (userName.equals("username")) {
 							statusCode = new StatusCode(StatusCodes.Bad_UserAccessDenied);
-						} else if (GenericUtil.readServerPropertyConfigFile(userName)==null) {
+						} else if (GenericUtil.readServerPropertyConfigFile(userName) == null) {
 							statusCode = new StatusCode(StatusCodes.Bad_IdentityTokenRejected);
 						}
-                         
+
 						// Checking that policy id and encryption algorithm are
 						// valid.
 						// Add all supported policy ids and encryption
@@ -1185,41 +1212,43 @@ public class RoverAServer {
 							CryptoUtil.getCryptoProvider().decryptAsymm(pk, SecurityAlgorithm.Rsa15,
 									dataToDecrypt.getValue(), output, outputOffset);
 
-							int count = 11; // 
+							int count = 11; //
 							// passwords that are 8
 							// characters...
 							String plaintextPassword = new String(output, 1, count).trim();
 
 							// These usernames and passwords are defined in CTT
-							//GET UserName and Password from serverConfig FIle.
-							
+							// GET UserName and Password from serverConfig FIle.
+
 							// settings
-						
-							
+
 							if ((!plaintextPassword.equals(passkey))) {
 								statusCode = new StatusCode(StatusCodes.Bad_UserAccessDenied);
 							}
 
 						}
 					}
-									} catch (DecodingException e) {
+				} catch (DecodingException e) {
 					e.printStackTrace();
 				} catch (ServiceResultException e) {
 					e.printStackTrace();
 				}
-				
+
 			}
 			response.setServerNonce(CryptoUtil.createNonce(32));
 
 			if (statusCode == null) {
 				statusCode = StatusCode.GOOD;
 				validAuthenticationTokens.add(authenticationToken);
-				
+
 			}
 			ResponseHeader h = new ResponseHeader(DateTime.currentTime(), requestHeader.getRequestHandle(), statusCode,
 					null, getApplication().getLocaleIds(), null);
 			response.setResponseHeader(h);
-			EventLogUtil.writeActiveSessionLog(activeSessionEventParam);
+			
+			EventModel eventModel = new EventModel("onActivateSession", activeSessionEventParam);
+			EventLogUtil.writeToServerEventLog(eventModel);
+			
 			msgExchange.sendResponse(response);
 		}
 
@@ -1252,8 +1281,6 @@ public class RoverAServer {
 
 			msgExchange.sendResponse(res);
 		}
-		
-		
 
 		public void onCreateSession(EndpointServiceRequest<CreateSessionRequest, CreateSessionResponse> msgExchange)
 				throws ServiceFaultException {
@@ -1326,14 +1353,18 @@ public class RoverAServer {
 
 			if (statusCode == null) {
 				statusCode = StatusCode.GOOD;
-				
+
 			}
 			// Set response header
 			ResponseHeader h = new ResponseHeader(DateTime.currentTime(), request.getRequestHeader().getRequestHandle(),
 					statusCode, null, getApplication().getLocaleIds(), null);
 			response.setResponseHeader(h);
-            EventLogUtil.writeSessionLog(response.getSessionId(),
-            		response.getAuthenticationToken(),request,response);
+			
+			CreateSessionEventParam populateCreateSessionObject = EventLogUtil.populateCreateSessionObject(response.getSessionId(), response.getAuthenticationToken(), request, response);
+			EventModel eventModel = new EventModel("onCreateSession", populateCreateSessionObject);
+			EventLogUtil.writeToServerEventLog(eventModel);
+			
+			
 			msgExchange.sendResponse(response);
 		}
 
@@ -1373,52 +1404,48 @@ public class RoverAServer {
 		public void onCall(EndpointServiceRequest<CallRequest, CallResponse> callRequest) throws ServiceFaultException {
 			throw new ServiceFaultException(ServiceFault.createServiceFault(StatusCodes.Bad_NotImplemented));
 			/*
-			CallResponse response = new CallResponse();
-			CallMethodRequest[] reqs = callRequest.getRequest().getMethodsToCall();
-			CallMethodResult[] results = new CallMethodResult[ reqs.length ];
-			
-			for (int i=0; i<reqs.length; i++) {
-				CallMethodRequest req = reqs[i];
-				CallMethodResult result = results[i] = new CallMethodResult();
-				
-				NodeId methodId = req.getMethodId();
-				if ( LIST_SOLVERS.equals(methodId) ) {				
-					
-					
-					Variant[] solvers = req.getInputArguments();			
-					Variant solversInVariant = new Variant( solvers );		
-					
-					
-					result.setOutputArguments( new Variant[] {solversInVariant} );
-					result.setStatusCode( StatusCode.GOOD );				
-				}
-				
-				else {
-					// Unknown method
-					result.setStatusCode( new StatusCode( StatusCodes.Bad_MethodInvalid ) );
-				}
-				
-			}
-			
-			for(CallMethodRequest req:reqs){
-				
-				NodeId methodId = req.getMethodId();
-				if(LIST_SOLVERS.equals(methodId)){
-				    
-					Variant[] inputArguments = req.getInputArguments();
-					 for(Variant v: inputArguments){
-						 
-					 }
-				}
-				
-			}
-			
-			response.setResults( results );
-		    callRequest.sendResponse(response);	*/
-			
+			 * CallResponse response = new CallResponse(); CallMethodRequest[]
+			 * reqs = callRequest.getRequest().getMethodsToCall();
+			 * CallMethodResult[] results = new CallMethodResult[ reqs.length ];
+			 * 
+			 * for (int i=0; i<reqs.length; i++) { CallMethodRequest req =
+			 * reqs[i]; CallMethodResult result = results[i] = new
+			 * CallMethodResult();
+			 * 
+			 * NodeId methodId = req.getMethodId(); if (
+			 * LIST_SOLVERS.equals(methodId) ) {
+			 * 
+			 * 
+			 * Variant[] solvers = req.getInputArguments(); Variant
+			 * solversInVariant = new Variant( solvers );
+			 * 
+			 * 
+			 * result.setOutputArguments( new Variant[] {solversInVariant} );
+			 * result.setStatusCode( StatusCode.GOOD ); }
+			 * 
+			 * else { // Unknown method result.setStatusCode( new StatusCode(
+			 * StatusCodes.Bad_MethodInvalid ) ); }
+			 * 
+			 * }
+			 * 
+			 * for(CallMethodRequest req:reqs){
+			 * 
+			 * NodeId methodId = req.getMethodId();
+			 * if(LIST_SOLVERS.equals(methodId)){
+			 * 
+			 * Variant[] inputArguments = req.getInputArguments(); for(Variant
+			 * v: inputArguments){
+			 * 
+			 * } }
+			 * 
+			 * }
+			 * 
+			 * response.setResults( results );
+			 * callRequest.sendResponse(response);
+			 */
+
 		}
 
-		
 	}
 
 	/**
@@ -1461,7 +1488,13 @@ public class RoverAServer {
 		return responseHeader;
 	}
 
-	public static void main(String[] args) throws Exception {
+	/***
+	 * Starting point of the application server.
+	 * 
+	 * @throws Exception
+	 */
+
+	public static void start() throws Exception {
 
 		String applicationName = "TimeSyncServer";
 		Locale myLocale = new Locale("en");
@@ -1483,8 +1516,8 @@ public class RoverAServer {
 
 		roverServer.addServiceHandler(new RoverAttributeServiceHandler());
 		roverServer.addServiceHandler(new FindServersServiceHandler());
-		//roverServer.addServiceHandler(new RoverMonitoredItemServiceHandler() );
 		roverServer.addServiceHandler(new RoverNodemanagementServiceHandler());
+
 		CryptoUtil.setCryptoProvider(new BcCryptoProvider());
 
 		logger.info("Type \"exit\" to shutdown the application");
@@ -1504,4 +1537,7 @@ public class RoverAServer {
 
 	}
 
+	public static void main(String[] args) throws Exception {
+		start();
+	}
 }

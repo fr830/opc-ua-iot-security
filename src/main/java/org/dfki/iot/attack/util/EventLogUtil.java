@@ -6,25 +6,23 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.reflect.Field;
 
-import org.codehaus.jackson.map.util.JSONPObject;
-import org.dfki.iot.attack.model.ActiveSessionEventParam;
-import org.dfki.iot.attack.model.AddNodesEventParam;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.node.ObjectNode;
 import org.dfki.iot.attack.model.CreateSessionEventParam;
-import org.dfki.iot.attack.model.ReadNodeEventParam;
-import org.dfki.iot.attack.model.RoverAModel;
-import org.hamcrest.core.IsInstanceOf;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import org.dfki.iot.attack.model.EventModel;
 import org.opcfoundation.ua.core.CreateSessionRequest;
 import org.opcfoundation.ua.core.CreateSessionResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class EventLogUtil {
+
 	private static final Logger myLogger = LoggerFactory.getLogger(EventLogUtil.class);
- private static final	File serverEventLogfile = new File("./src/main/resources/event.log");
+	private static final File serverEventLogfile = new File("./src/main/resources/event.log");
+	private static final File clientEventLogfile = new File("./src/main/resources/clientEvents.log ");
+
 	public static void main(String[] args) {
 
 		try {
@@ -34,71 +32,51 @@ public class EventLogUtil {
 				FileOutputStream outputStream = new FileOutputStream(new File("./src/main/resources/event.log"));
 
 			} catch (FileNotFoundException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 
 			e.printStackTrace();
+			myLogger.debug(
+					"\n LocalizedMessage : " + e.getLocalizedMessage() + "\n  		 Message :: " + e.getMessage()
+							+ "\n toString :: " + e.toString() + "\n:		 StackTrace :: " + e.getStackTrace());
 		}
-
-	}
-
-	/**
-	 * 
-	 * @param sessionId
-	 * @param authToken
-	 * @param request
-	 * @param response
-	 *            Method to write parameters sessionId, AuthenticationTokenId
-	 *            and extract parameters from CreateSession Request and Response
-	 *            for security purpose Logging.
-	 */
-	public static void writeSessionLog(Object sessionId, Object authToken, Object request, Object response) {
-
-		CreateSessionEventParam populateCreateSessionObject = populateCreateSessionObject(sessionId, authToken, request,
-				response);
-		writeToEventFile("createSession", populateCreateSessionObject);
 
 	}
 
 	/**
 	 * Method to convert Object to Json and write to a File.
 	 * 
-	 * @param auditString
-	 * @param populateCreateSessionObject
+	 * @param eventModel
+	 * 
 	 */
-	private static void writeToEventFile(String auditString, Object populateCreateSessionObject) {
-		JSONObject jsonObject = new JSONObject();
+	public static void writeToServerEventLog(EventModel eventModel) {
+
 		try {
 
-		//	File file = new File("./src/main/resources/event.log");
-			if (serverEventLogfile.exists()) {
-				FileWriter writer = new FileWriter(serverEventLogfile, true);
-
-				jsonObject.put(auditString, (JSONUtil.getJSONString(populateCreateSessionObject)));
-				writer.write(jsonObject.toString());
-				writer.flush();
-				writer.close();
-			} else {
+			if (!serverEventLogfile.exists()) {
 				serverEventLogfile.createNewFile();
-				FileWriter writer = new FileWriter(serverEventLogfile);
-				jsonObject.put(auditString, JSONUtil.getJSONString(populateCreateSessionObject));
-				writer.write(jsonObject.toString());
-				writer.flush();
-				writer.close();
-
 			}
+
+			String text = JSONUtil.getJSONString(eventModel) + "\n";
+
+			FileWriter writer = new FileWriter(serverEventLogfile, true);
+			writer.write(text);
+			writer.flush();
+			writer.close();
+
 		} catch (FileNotFoundException e) {
 			try {
-			//	File file = new File("./src/main/resources/event.log");
+
 				serverEventLogfile.createNewFile();
-				FileWriter writer = new FileWriter(serverEventLogfile);
-				jsonObject.put(auditString, JSONUtil.getJSONString(populateCreateSessionObject));
-				writer.write(jsonObject.toString());
+
+				String text = JSONUtil.getJSONString(eventModel) + "\n";
+
+				FileWriter writer = new FileWriter(serverEventLogfile, true);
+				writer.write(text);
 				writer.flush();
 				writer.close();
 			} catch (IOException e1) {
-
+				e1.printStackTrace();
 			}
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -115,7 +93,7 @@ public class EventLogUtil {
 	 * @return
 	 */
 
-	private static CreateSessionEventParam populateCreateSessionObject(Object sessionId, Object authToken,
+	public static CreateSessionEventParam populateCreateSessionObject(Object sessionId, Object authToken,
 			Object request, Object response) {
 		CreateSessionEventParam createSessionEventParam = new CreateSessionEventParam();
 		createSessionEventParam.setSessionId(sessionId.toString());
@@ -136,68 +114,48 @@ public class EventLogUtil {
 		return createSessionEventParam;
 	}
 
-	/**
-	 * Method to write onActiveSession Event parameters such as userName,
-	 * Session and Authentication Token to Event log.
-	 * 
-	 * @param activeSessionEventParam
-	 */
-	public static void writeActiveSessionLog(ActiveSessionEventParam activeSessionEventParam) {
-		writeToEventFile("activeSession", activeSessionEventParam);
-	}
-	/**
-	 * 
-	 * @param addNodesEventParam
-	 */
+	public static void writeToClientEventLog(String clientName, String authenticationToken) {
 
-	public static void writeAddNodesLog(AddNodesEventParam addNodesEventParam , String str) {
-		writeToEventFile(str, addNodesEventParam);
-		
-	}
-
-	public static void writeReadLog(ReadNodeEventParam readEventParam) {
-		writeToEventFile("ReadNode", readEventParam);
-		
-	}
-
-	public static void writeClientEventLog(String clientName, Object obj){
-		JSONObject jsonObject = new JSONObject();
-		String fileName="./src/main/resources/"+clientName+".log" ; 
-		File file = new File(fileName);
 		try {
-              
-			if (file.exists()) {
-				FileWriter writer = new FileWriter(file, true);
 
-				jsonObject.put(clientName, (JSONUtil.getJSONString(obj)));
-				writer.write(jsonObject.toString());
-				writer.flush();
-				writer.close();
-			} else {
-				file.createNewFile();
-				FileWriter writer = new FileWriter(file);
-				jsonObject.put(clientName, JSONUtil.getJSONString(obj));
-				writer.write(jsonObject.toString());
-				writer.flush();
-				writer.close();
-
+			if (!clientEventLogfile.exists()) {
+				clientEventLogfile.createNewFile();
 			}
+
+			ObjectMapper mapper = new ObjectMapper();
+			JsonNode rootNode = mapper.createObjectNode();
+			((ObjectNode) rootNode).put("clientName", clientName);
+			((ObjectNode) rootNode).put("authenticationToken", authenticationToken);
+			String text = JSONUtil.getJSONString(rootNode) + "\n";
+
+			FileWriter writer = new FileWriter(clientEventLogfile,true);
+			writer.write(text);
+			writer.flush();
+			writer.close();
+
 		} catch (FileNotFoundException e) {
 			try {
-			//	File file = new File("./src/main/resources/event.log");
-				file.createNewFile();
-				FileWriter writer = new FileWriter(file);
-				jsonObject.put(clientName, JSONUtil.getJSONString(obj));
-				writer.write(jsonObject.toString());
+
+				clientEventLogfile.createNewFile();
+
+				ObjectMapper mapper = new ObjectMapper();
+				JsonNode rootNode = mapper.createObjectNode();
+				((ObjectNode) rootNode).put("clientName", clientName);
+				((ObjectNode) rootNode).put("authenticationToken", authenticationToken);
+				String text = JSONUtil.getJSONString(rootNode) + "\n";
+
+				FileWriter writer = new FileWriter(clientEventLogfile,true);
+				writer.write(text);
 				writer.flush();
 				writer.close();
-			} catch (IOException e1) {
 
+			} catch (IOException e1) {
+				e1.printStackTrace();
 			}
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
-	
+
 }

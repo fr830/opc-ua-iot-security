@@ -51,17 +51,17 @@ public class GenericUtil {
 
 			input = GenericUtil.class.getClassLoader().getResourceAsStream(filename);
 			if (input == null) {
-				myLogger.info("Sorry, unable to find " + filename);
+				myLogger.debug("Sorry, unable to find " + filename);
 				return null;
 			}
 
 			prop.load(input);
-			myLogger.info("Property [ " + propertyName + " ] retreieved successfully");
+			myLogger.debug("Property [ " + propertyName + " ] retreieved successfully");
 
 			return prop.getProperty(propertyName);
 
 		} catch (IOException ex) {
-			myLogger.info(
+			myLogger.debug(
 					"\n LocalizedMessage : " + ex.getLocalizedMessage() + "\n  		 Message :: " + ex.getMessage()
 							+ "\n toString :: " + ex.toString() + "\n:		 StackTrace :: " + ex.getStackTrace());
 		} finally {
@@ -69,7 +69,7 @@ public class GenericUtil {
 				try {
 					input.close();
 				} catch (IOException e) {
-					myLogger.info("\n LocalizedMessage : " + e.getLocalizedMessage() + "\n  		 Message :: "
+					myLogger.debug("\n LocalizedMessage : " + e.getLocalizedMessage() + "\n  		 Message :: "
 							+ e.getMessage() + "\n toString :: " + e.toString() + "\n:		 StackTrace :: "
 							+ e.getStackTrace());
 				}
@@ -94,7 +94,7 @@ public class GenericUtil {
 
 		InetAddress ip = InetAddress.getLocalHost();
 
-		myLogger.info("Current machine IP address : " + ip.getHostAddress());
+		myLogger.debug("Current machine IP address : " + ip.getHostAddress());
 
 		return ip.getHostAddress();
 
@@ -112,7 +112,7 @@ public class GenericUtil {
 			sb.append(String.format("%02X%s", mac[i], (i < mac.length - 1) ? "-" : ""));
 		}
 
-		myLogger.info("Current machine MAC address : " + sb.toString());
+		myLogger.debug("Current machine MAC address : " + sb.toString());
 
 		return sb.toString();
 	}

@@ -122,7 +122,7 @@ public class RoverAClient {
 		
 		// Create Channel
 		SessionChannel mySession = myClient.createSessionChannel(endpoint);
-		EventLogUtil.writeClientEventLog("ClientId1",
+		EventLogUtil.writeToClientEventLog("ClientId1",
 				mySession.getSession().getAuthenticationToken().toString());
 //mySession.getSession().getDiagnosticsInfo().get
 		/*SetMonitoringModeRequest reqAudit=new SetMonitoringModeRequest();
