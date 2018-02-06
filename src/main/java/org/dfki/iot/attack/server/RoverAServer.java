@@ -26,6 +26,7 @@ import org.dfki.iot.attack.model.EventModel;
 import org.dfki.iot.attack.util.EventLogUtil;
 import org.dfki.iot.attack.util.ExampleKeys;
 import org.dfki.iot.attack.util.GenericUtil;
+import org.dfki.iot.attack.util.JSONUtil;
 import org.opcfoundation.ua.application.Application;
 import org.opcfoundation.ua.application.Server;
 import org.opcfoundation.ua.builtintypes.ByteString;
@@ -258,7 +259,6 @@ public class RoverAServer {
 		 */
 		public void onFindServers(EndpointServiceRequest<FindServersRequest, FindServersResponse> req)
 				throws ServiceFaultException {
-
 			FindServersRequest request = req.getRequest();
 
 			ApplicationDescription[] servers = new ApplicationDescription[1];
@@ -289,6 +289,19 @@ public class RoverAServer {
 
 			FindServersResponse response = new FindServersResponse(header, servers);
 
+			if (GenericUtil.enableAuditing("onFindServers")) {
+
+				EventParamModel eventParamModel = new EventParamModel();
+				eventParamModel.setAuthenToken(request.getRequestHeader().getAuthenticationToken().toString());
+				eventParamModel.setAuditId(request.getRequestHeader().getAuditEntryId());
+				eventParamModel.setSessionId(null);
+				eventParamModel.setRemoteAddress(req.getChannel().getConnection().getRemoteAddress());
+
+				EventModel eventModel = new EventModel("onFindServers", eventParamModel);
+				EventLogUtil.writeToServerEventLog(eventModel);
+
+			}
+
 			req.sendResponse(response);
 		}
 	}
@@ -297,6 +310,7 @@ public class RoverAServer {
 
 		public void onAddNodes(EndpointServiceRequest<AddNodesRequest, AddNodesResponse> req)
 				throws ServiceFaultException {
+
 			AddNodesRequest request = req.getRequest();
 			AddNodesItem[] nodesToAdd = request.getNodesToAdd();
 			AddNodesResponse response = new AddNodesResponse();
@@ -316,14 +330,17 @@ public class RoverAServer {
 				addNodeProperties(nodesToAdd, response, addNodesResult);
 			}
 
-			EventParamModel eventParamModel = new EventParamModel();
-			eventParamModel.setAuthenToken(req.getRequest().getRequestHeader().getAuthenticationToken().toString());
-			eventParamModel.setAuditId(req.getRequest().getRequestHeader().getAuditEntryId());
-			eventParamModel.setSessionId(null);
-			
-			EventModel eventModel = new EventModel("onAddNodes", eventParamModel);
-			EventLogUtil.writeToServerEventLog(eventModel);
-			
+			if (GenericUtil.enableAuditing("onAddNodes")) {
+				EventParamModel eventParamModel = new EventParamModel();
+				eventParamModel.setAuthenToken(request.getRequestHeader().getAuthenticationToken().toString());
+				eventParamModel.setAuditId(request.getRequestHeader().getAuditEntryId());
+				eventParamModel.setSessionId(null);
+				eventParamModel.setRemoteAddress(req.getChannel().getConnection().getRemoteAddress());
+
+				EventModel eventModel = new EventModel("onAddNodes", eventParamModel);
+				EventLogUtil.writeToServerEventLog(eventModel);
+			}
+
 			req.sendResponse(response);
 
 		}
@@ -557,14 +574,16 @@ public class RoverAServer {
 
 			response = new ReadResponse(responseHeader, results, null);
 
-			EventParamModel eventParamModel = new EventParamModel();
-			eventParamModel.setAuthenToken(req.getRequest().getRequestHeader().getAuthenticationToken().toString());
-			eventParamModel.setAuditId(req.getRequest().getRequestHeader().getAuditEntryId());
-			eventParamModel.setSessionId(null);
-			
-			EventModel eventModel = new EventModel("onRead", eventParamModel);
-			EventLogUtil.writeToServerEventLog(eventModel);
-			
+			if (GenericUtil.enableAuditing("onRead")) {
+				EventParamModel eventParamModel = new EventParamModel();
+				eventParamModel.setAuthenToken(req.getRequest().getRequestHeader().getAuthenticationToken().toString());
+				eventParamModel.setAuditId(req.getRequest().getRequestHeader().getAuditEntryId());
+				eventParamModel.setSessionId(null);
+				eventParamModel.setRemoteAddress(req.getChannel().getConnection().getRemoteAddress());
+
+				EventModel eventModel = new EventModel("onRead", eventParamModel);
+				EventLogUtil.writeToServerEventLog(eventModel);
+			}
 			req.sendResponse(response);
 		}
 
@@ -576,7 +595,7 @@ public class RoverAServer {
 
 			WriteRequest request = req.getRequest();
 			WriteValue[] nodesToWrite = request.getNodesToWrite();
-			
+
 			StatusCode[] results = null;
 			StatusCode serviceResultCode = null;
 			IEncodeable iEncodeable = userAuthorization
@@ -756,15 +775,18 @@ public class RoverAServer {
 			ResponseHeader h = new ResponseHeader(DateTime.currentTime(), request.getRequestHeader().getRequestHandle(),
 					serviceResultCode, null, null, null);
 			response.setResponseHeader(h);
-			
-			EventParamModel eventParamModel = new EventParamModel();
-			eventParamModel.setAuthenToken(req.getRequest().getRequestHeader().getAuthenticationToken().toString());
-			eventParamModel.setAuditId(req.getRequest().getRequestHeader().getAuditEntryId());
-			eventParamModel.setSessionId(null);
-			
-			EventModel eventModel = new EventModel("onWrite", eventParamModel);
-			EventLogUtil.writeToServerEventLog(eventModel);
-			
+
+			if (GenericUtil.enableAuditing("onWrite")) {
+				EventParamModel eventParamModel = new EventParamModel();
+				eventParamModel.setAuthenToken(req.getRequest().getRequestHeader().getAuthenticationToken().toString());
+				eventParamModel.setAuditId(req.getRequest().getRequestHeader().getAuditEntryId());
+				eventParamModel.setSessionId(null);
+				eventParamModel.setRemoteAddress(req.getChannel().getConnection().getRemoteAddress());
+
+				EventModel eventModel = new EventModel("onWrite", eventParamModel);
+				EventLogUtil.writeToServerEventLog(eventModel);
+			}
+
 			req.sendResponse(response);
 		}
 
@@ -1245,10 +1267,15 @@ public class RoverAServer {
 			ResponseHeader h = new ResponseHeader(DateTime.currentTime(), requestHeader.getRequestHandle(), statusCode,
 					null, getApplication().getLocaleIds(), null);
 			response.setResponseHeader(h);
-			
-			EventModel eventModel = new EventModel("onActivateSession", activeSessionEventParam);
-			EventLogUtil.writeToServerEventLog(eventModel);
-			
+
+			if (GenericUtil.enableAuditing("onActivateSession")) {
+
+				activeSessionEventParam.setRemoteAddress(msgExchange.getChannel().getConnection().getRemoteAddress());
+
+				EventModel eventModel = new EventModel("onActivateSession", activeSessionEventParam);
+				EventLogUtil.writeToServerEventLog(eventModel);
+			}
+
 			msgExchange.sendResponse(response);
 		}
 
@@ -1359,12 +1386,18 @@ public class RoverAServer {
 			ResponseHeader h = new ResponseHeader(DateTime.currentTime(), request.getRequestHeader().getRequestHandle(),
 					statusCode, null, getApplication().getLocaleIds(), null);
 			response.setResponseHeader(h);
-			
-			CreateSessionEventParam populateCreateSessionObject = EventLogUtil.populateCreateSessionObject(response.getSessionId(), response.getAuthenticationToken(), request, response);
-			EventModel eventModel = new EventModel("onCreateSession", populateCreateSessionObject);
-			EventLogUtil.writeToServerEventLog(eventModel);
-			
-			
+
+			if (GenericUtil.enableAuditing("onCreateSession")) {
+
+				CreateSessionEventParam createSessionObject = EventLogUtil.populateCreateSessionObject(
+						response.getSessionId(), response.getAuthenticationToken(), request, response);
+
+				createSessionObject.setRemoteAddress(msgExchange.getChannel().getConnection().getRemoteAddress());
+
+				EventModel eventModel = new EventModel("onCreateSession", createSessionObject);
+				EventLogUtil.writeToServerEventLog(eventModel);
+			}
+
 			msgExchange.sendResponse(response);
 		}
 

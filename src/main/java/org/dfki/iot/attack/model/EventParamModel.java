@@ -1,15 +1,19 @@
 package org.dfki.iot.attack.model;
 
+import java.net.SocketAddress;
+
 public class EventParamModel {
 	private String sessionId;
 	private String authenToken;
 	private String auditId;
+	private SocketAddress remoteAddress;
 
-	public EventParamModel(String sessionId, String authenToken, String auditId) {
+	public EventParamModel(String sessionId, String authenToken, String auditId, SocketAddress remoteAddress) {
 		super();
 		this.sessionId = sessionId;
 		this.authenToken = authenToken;
 		this.auditId = auditId;
+		this.remoteAddress = remoteAddress;
 	}
 
 	public EventParamModel() {
@@ -40,12 +44,21 @@ public class EventParamModel {
 		this.auditId = auditId;
 	}
 
+	public SocketAddress getRemoteAddress() {
+		return remoteAddress;
+	}
+
+	public void setRemoteAddress(SocketAddress remoteAddress) {
+		this.remoteAddress = remoteAddress;
+	}
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((auditId == null) ? 0 : auditId.hashCode());
 		result = prime * result + ((authenToken == null) ? 0 : authenToken.hashCode());
+		result = prime * result + ((remoteAddress == null) ? 0 : remoteAddress.hashCode());
 		result = prime * result + ((sessionId == null) ? 0 : sessionId.hashCode());
 		return result;
 	}
@@ -69,6 +82,11 @@ public class EventParamModel {
 				return false;
 		} else if (!authenToken.equals(other.authenToken))
 			return false;
+		if (remoteAddress == null) {
+			if (other.remoteAddress != null)
+				return false;
+		} else if (!remoteAddress.equals(other.remoteAddress))
+			return false;
 		if (sessionId == null) {
 			if (other.sessionId != null)
 				return false;
@@ -80,7 +98,7 @@ public class EventParamModel {
 	@Override
 	public String toString() {
 		return "EventParamModel [sessionId=" + sessionId + ", authenToken=" + authenToken + ", auditId=" + auditId
-				+ "]";
+				+ ", remoteAddress=" + remoteAddress + "]";
 	}
 
 }

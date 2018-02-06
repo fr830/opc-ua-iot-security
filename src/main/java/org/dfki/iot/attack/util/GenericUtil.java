@@ -90,6 +90,14 @@ public class GenericUtil {
 		return readPropertyFile(filename, propertyName);
 	}
 
+	public static boolean enableAuditing(String operationName) {
+		String operations = readServerPropertyConfigFile("monitor.operations");
+		if (null != operations && operations.contains(operationName)) {
+			return true;
+		}
+		return false;
+	}
+
 	public static String getCurrentMachineIpAddress() throws UnknownHostException {
 
 		InetAddress ip = InetAddress.getLocalHost();

@@ -70,6 +70,8 @@ public class RoverAClient1 {
 		myClient.getApplication().getHttpsSettings().setKeyPair(myHttpsCertificate);
 		//////////////////////////////////////
 
+		//ipAddress ="85.214.53.244"; 
+		
 		if (("opc.tcp").equalsIgnoreCase(protocolType)) {
 
 			endpointUrl = protocolType + "://" + ipAddress + ":8666/" + applicationName;
@@ -156,7 +158,8 @@ public class RoverAClient1 {
 		NodeId nodeSearch=Identifiers.Server_ServerStatus ;
 		
 		RequestHeader readHeader=new RequestHeader();
-		readHeader.setAuditEntryId(""+mySession.getSession().getAuthenticationToken()+DateTime.currentTime()); 
+		
+	/*	readHeader.setAuditEntryId(""+mySession.getSession().getAuthenticationToken()+DateTime.currentTime()); 
 		//Before
 		ReadResponse res4 = mySession.Read(readHeader, null, TimestampsToReturn.Neither,
 				new ReadValueId(nodeSearch, Attributes.Description, null, null));
@@ -174,13 +177,15 @@ public class RoverAClient1 {
 		req.setNodesToWrite(NodesToWrite);
 		WriteResponse write = mySession.Write(req);
 		
-		myLogger.info("WriteResponse: After Attribute Write " + write);
+		myLogger.info("WriteResponse: After Attribute Write " + write);*/
 		
 		readHeader.setAuditEntryId(""+mySession.getSession().getAuthenticationToken()+DateTime.currentTime()); 
 		//readHeader.setAuditEntryId(""+mySession.getSession().getAuthenticationToken()+DateTime.currentTime());
 		ReadResponse res5 = mySession.Read(readHeader, null, TimestampsToReturn.Neither,
 				new ReadValueId(nodeSearch, Attributes.Description, null, null));
 		myLogger.info("Read Response : Read After Write Attribute " + res5);
+		
+		
 		mySession.closeAsync();
 		System.exit(0);
 
