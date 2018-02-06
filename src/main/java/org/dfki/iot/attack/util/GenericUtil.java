@@ -9,12 +9,18 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Properties;
 
+import org.dfki.iot.attack.model.CountryModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.maxmind.geoip2.DatabaseReader;
+import com.maxmind.geoip2.exception.GeoIp2Exception;
+import com.maxmind.geoip2.model.CityResponse;
 
 public class GenericUtil {
 
 	private static final Logger myLogger = LoggerFactory.getLogger(GenericUtil.class);
+	private static final File cityDatabase = new File("./src/main/resources/GeoLite2-City.mmdb");
 
 	public static void main(String[] args) throws UnknownHostException, SocketException {
 
@@ -124,5 +130,30 @@ public class GenericUtil {
 
 		return sb.toString();
 	}
+
+	public static CountryModel getCountryDetails(String ipAddress) throws IOException, GeoIp2Exception {
+
+		DatabaseReader dbReader = new DatabaseReader.Builder(cityDatabase).build();
+
+		InetAddress inetAddress = InetAddress.getByName(ipAddress);
+		CityResponse cityResponse = dbReader.city(inetAddress);
+
+		String countryName = cityResponse.getCountry().getName();
+		String continent = cityResponse.getContinent().getName();
+		String cityName = cityResponse.getCity().getName();
+		Double latitude = cityResponse.getLocation().getLatitude();
+		Double longitude = cityResponse.getLocation().getLongitude();
+
+		CountryModel countryModel = new CountryModel(countryName, continent, cityName, latitude, longitude);
+
+		return countryModel;
+
+	}
+
+	public static void generateCharts() {
+
+	}
+	
+	
 
 }

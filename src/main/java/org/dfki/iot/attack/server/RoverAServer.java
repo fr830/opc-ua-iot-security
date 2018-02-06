@@ -11,22 +11,27 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.Scanner;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 
 import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.dfki.iot.attack.model.ActiveSessionEventParam;
+import org.dfki.iot.attack.model.CountryModel;
 import org.dfki.iot.attack.model.CreateSessionEventParam;
-import org.dfki.iot.attack.model.EventParamModel;
 import org.dfki.iot.attack.model.EventModel;
+import org.dfki.iot.attack.model.EventParamModel;
 import org.dfki.iot.attack.util.EventLogUtil;
 import org.dfki.iot.attack.util.ExampleKeys;
 import org.dfki.iot.attack.util.GenericUtil;
-import org.dfki.iot.attack.util.JSONUtil;
 import org.opcfoundation.ua.application.Application;
 import org.opcfoundation.ua.application.Server;
 import org.opcfoundation.ua.builtintypes.ByteString;
@@ -142,6 +147,9 @@ public class RoverAServer {
 	static ContinuationPoint continuationPoint;
 
 	static RoverAServerExample roverServer;
+
+	// To store all the country wise ip address count
+	static HashMap<String, CountryModel> countryChartMap = new HashMap<String, CountryModel>();
 
 	/**
 	 * Class to represent ContinuationPoint. This Server supports one
@@ -583,6 +591,10 @@ public class RoverAServer {
 
 				EventModel eventModel = new EventModel("onRead", eventParamModel);
 				EventLogUtil.writeToServerEventLog(eventModel);
+				
+				//GenericUtil.getCountryDetails(eventParamModel.getRemoteAddress());
+				
+				
 			}
 			req.sendResponse(response);
 		}
@@ -1521,6 +1533,29 @@ public class RoverAServer {
 		return responseHeader;
 	}
 
+	public static class ChartSchedulerTask extends TimerTask {
+
+		/**
+		 * Implements TimerTask's abstract run method.
+		 */
+		@Override
+		public void run() {
+			System.out.println("..............................Testing Scheduler...................................");
+
+		}
+
+	}
+
+	private static Date getTomorrowMorning1am() {
+		Calendar tomorrow = new GregorianCalendar();
+		tomorrow.add(Calendar.DATE, 1);
+
+		Calendar result = new GregorianCalendar(tomorrow.get(Calendar.YEAR), tomorrow.get(Calendar.MONTH),
+				tomorrow.get(Calendar.DATE), 1, 0);
+
+		return result.getTime();
+	}
+
 	/***
 	 * Starting point of the application server.
 	 * 
@@ -1552,6 +1587,15 @@ public class RoverAServer {
 		roverServer.addServiceHandler(new RoverNodemanagementServiceHandler());
 
 		CryptoUtil.setCryptoProvider(new BcCryptoProvider());
+
+		/***
+		 * chartSchedulerTask will get all the values from country hashMap and
+		 * store it in chartLog file.
+		 */
+
+		TimerTask chartSchedulerTask = new RoverAServer.ChartSchedulerTask();
+		Timer timer = new Timer();
+		timer.scheduleAtFixedRate(chartSchedulerTask, getTomorrowMorning1am(), 1000 * 60 * 60 * 24);
 
 		logger.info("Type \"exit\" to shutdown the application");
 
