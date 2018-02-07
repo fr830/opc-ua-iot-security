@@ -1,24 +1,11 @@
 package org.dfki.iot.attack.model;
 
-import java.net.SocketAddress;
-
 public class EventParamModel {
 	private String sessionId;
 	private String authenToken;
 	private String auditId;
-	private SocketAddress remoteAddress;
-
-	public EventParamModel(String sessionId, String authenToken, String auditId, SocketAddress remoteAddress) {
-		super();
-		this.sessionId = sessionId;
-		this.authenToken = authenToken;
-		this.auditId = auditId;
-		this.remoteAddress = remoteAddress;
-	}
-
-	public EventParamModel() {
-		super();
-	}
+	private String ipAddress;
+	private int port;
 
 	public String getSessionId() {
 		return sessionId;
@@ -44,12 +31,20 @@ public class EventParamModel {
 		this.auditId = auditId;
 	}
 
-	public SocketAddress getRemoteAddress() {
-		return remoteAddress;
+	public String getIpAddress() {
+		return ipAddress;
 	}
 
-	public void setRemoteAddress(SocketAddress remoteAddress) {
-		this.remoteAddress = remoteAddress;
+	public void setIpAddress(String ipAddress) {
+		this.ipAddress = ipAddress;
+	}
+
+	public int getPort() {
+		return port;
+	}
+
+	public void setPort(int port) {
+		this.port = port;
 	}
 
 	@Override
@@ -58,7 +53,8 @@ public class EventParamModel {
 		int result = 1;
 		result = prime * result + ((auditId == null) ? 0 : auditId.hashCode());
 		result = prime * result + ((authenToken == null) ? 0 : authenToken.hashCode());
-		result = prime * result + ((remoteAddress == null) ? 0 : remoteAddress.hashCode());
+		result = prime * result + ((ipAddress == null) ? 0 : ipAddress.hashCode());
+		result = prime * result + port;
 		result = prime * result + ((sessionId == null) ? 0 : sessionId.hashCode());
 		return result;
 	}
@@ -82,10 +78,12 @@ public class EventParamModel {
 				return false;
 		} else if (!authenToken.equals(other.authenToken))
 			return false;
-		if (remoteAddress == null) {
-			if (other.remoteAddress != null)
+		if (ipAddress == null) {
+			if (other.ipAddress != null)
 				return false;
-		} else if (!remoteAddress.equals(other.remoteAddress))
+		} else if (!ipAddress.equals(other.ipAddress))
+			return false;
+		if (port != other.port)
 			return false;
 		if (sessionId == null) {
 			if (other.sessionId != null)
@@ -98,7 +96,27 @@ public class EventParamModel {
 	@Override
 	public String toString() {
 		return "EventParamModel [sessionId=" + sessionId + ", authenToken=" + authenToken + ", auditId=" + auditId
-				+ ", remoteAddress=" + remoteAddress + "]";
+				+ ", ipAddress=" + ipAddress + ", port=" + port + "]";
+	}
+
+	/**
+	 * @param sessionId
+	 * @param authenToken
+	 * @param auditId
+	 * @param ipAddress
+	 * @param port
+	 */
+	public EventParamModel(String sessionId, String authenToken, String auditId, String ipAddress, int port) {
+		super();
+		this.sessionId = sessionId;
+		this.authenToken = authenToken;
+		this.auditId = auditId;
+		this.ipAddress = ipAddress;
+		this.port = port;
+	}
+
+	public EventParamModel() {
+		super();
 	}
 
 }

@@ -1,6 +1,5 @@
 package org.dfki.iot.attack.model;
 
-import java.net.SocketAddress;
 import java.security.Timestamp;
 
 import org.opcfoundation.ua.builtintypes.UnsignedInteger;
@@ -20,23 +19,8 @@ public class CreateSessionEventParam {
 	private Timestamp resTimeStamp;
 	private String sessionResult;
 	private Double resRevisedTimeOut;
-	private SocketAddress remoteAddress;
-
-	public CreateSessionEventParam(String sessionId, String authenToken, String sessionName,
-			String clientApplicationName, UnsignedInteger clientMaxResponseTime, Double clientRequestSessionTimeOut,
-			Timestamp resTimeStamp, String sessionResult, Double resRevisedTimeOut, SocketAddress remoteAddress) {
-		super();
-		this.sessionId = sessionId;
-		this.authenToken = authenToken;
-		this.sessionName = sessionName;
-		this.clientApplicationName = clientApplicationName;
-		this.clientMaxResponseTime = clientMaxResponseTime;
-		this.clientRequestSessionTimeOut = clientRequestSessionTimeOut;
-		this.resTimeStamp = resTimeStamp;
-		this.sessionResult = sessionResult;
-		this.resRevisedTimeOut = resRevisedTimeOut;
-		this.remoteAddress = remoteAddress;
-	}
+	private String ipAddress;
+	private int port;
 
 	public CreateSessionEventParam() {
 		super();
@@ -114,12 +98,20 @@ public class CreateSessionEventParam {
 		this.resRevisedTimeOut = resRevisedTimeOut;
 	}
 
-	public SocketAddress getRemoteAddress() {
-		return remoteAddress;
+	public String getIpAddress() {
+		return ipAddress;
 	}
 
-	public void setRemoteAddress(SocketAddress remoteAddress) {
-		this.remoteAddress = remoteAddress;
+	public void setIpAddress(String ipAddress) {
+		this.ipAddress = ipAddress;
+	}
+
+	public int getPort() {
+		return port;
+	}
+
+	public void setPort(int port) {
+		this.port = port;
 	}
 
 	@Override
@@ -130,7 +122,8 @@ public class CreateSessionEventParam {
 		result = prime * result + ((clientApplicationName == null) ? 0 : clientApplicationName.hashCode());
 		result = prime * result + ((clientMaxResponseTime == null) ? 0 : clientMaxResponseTime.hashCode());
 		result = prime * result + ((clientRequestSessionTimeOut == null) ? 0 : clientRequestSessionTimeOut.hashCode());
-		result = prime * result + ((remoteAddress == null) ? 0 : remoteAddress.hashCode());
+		result = prime * result + ((ipAddress == null) ? 0 : ipAddress.hashCode());
+		result = prime * result + port;
 		result = prime * result + ((resRevisedTimeOut == null) ? 0 : resRevisedTimeOut.hashCode());
 		result = prime * result + ((resTimeStamp == null) ? 0 : resTimeStamp.hashCode());
 		result = prime * result + ((sessionId == null) ? 0 : sessionId.hashCode());
@@ -168,10 +161,12 @@ public class CreateSessionEventParam {
 				return false;
 		} else if (!clientRequestSessionTimeOut.equals(other.clientRequestSessionTimeOut))
 			return false;
-		if (remoteAddress == null) {
-			if (other.remoteAddress != null)
+		if (ipAddress == null) {
+			if (other.ipAddress != null)
 				return false;
-		} else if (!remoteAddress.equals(other.remoteAddress))
+		} else if (!ipAddress.equals(other.ipAddress))
+			return false;
+		if (port != other.port)
 			return false;
 		if (resRevisedTimeOut == null) {
 			if (other.resRevisedTimeOut != null)
@@ -207,7 +202,37 @@ public class CreateSessionEventParam {
 				+ sessionName + ", clientApplicationName=" + clientApplicationName + ", clientMaxResponseTime="
 				+ clientMaxResponseTime + ", clientRequestSessionTimeOut=" + clientRequestSessionTimeOut
 				+ ", resTimeStamp=" + resTimeStamp + ", sessionResult=" + sessionResult + ", resRevisedTimeOut="
-				+ resRevisedTimeOut + ", remoteAddress=" + remoteAddress + "]";
+				+ resRevisedTimeOut + ", ipAddress=" + ipAddress + ", port=" + port + "]";
+	}
+
+	/**
+	 * @param sessionId
+	 * @param authenToken
+	 * @param sessionName
+	 * @param clientApplicationName
+	 * @param clientMaxResponseTime
+	 * @param clientRequestSessionTimeOut
+	 * @param resTimeStamp
+	 * @param sessionResult
+	 * @param resRevisedTimeOut
+	 * @param ipAddress
+	 * @param port
+	 */
+	public CreateSessionEventParam(String sessionId, String authenToken, String sessionName,
+			String clientApplicationName, UnsignedInteger clientMaxResponseTime, Double clientRequestSessionTimeOut,
+			Timestamp resTimeStamp, String sessionResult, Double resRevisedTimeOut, String ipAddress, int port) {
+		super();
+		this.sessionId = sessionId;
+		this.authenToken = authenToken;
+		this.sessionName = sessionName;
+		this.clientApplicationName = clientApplicationName;
+		this.clientMaxResponseTime = clientMaxResponseTime;
+		this.clientRequestSessionTimeOut = clientRequestSessionTimeOut;
+		this.resTimeStamp = resTimeStamp;
+		this.sessionResult = sessionResult;
+		this.resRevisedTimeOut = resRevisedTimeOut;
+		this.ipAddress = ipAddress;
+		this.port = port;
 	}
 
 }

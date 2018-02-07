@@ -3,6 +3,7 @@ package org.dfki.iot.attack.server;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.security.PrivateKey;
@@ -261,13 +262,13 @@ public class RoverAServer {
 		/**
 		 * FindServers Service
 		 * 
-		 * @param req
+		 * @param msgExchange
 		 *            EndpointServiceRequest
 		 * @throws ServiceFaultException
 		 */
-		public void onFindServers(EndpointServiceRequest<FindServersRequest, FindServersResponse> req)
+		public void onFindServers(EndpointServiceRequest<FindServersRequest, FindServersResponse> msgExchange)
 				throws ServiceFaultException {
-			FindServersRequest request = req.getRequest();
+			FindServersRequest request = msgExchange.getRequest();
 
 			ApplicationDescription[] servers = new ApplicationDescription[1];
 
@@ -303,28 +304,32 @@ public class RoverAServer {
 				eventParamModel.setAuthenToken(request.getRequestHeader().getAuthenticationToken().toString());
 				eventParamModel.setAuditId(request.getRequestHeader().getAuditEntryId());
 				eventParamModel.setSessionId(null);
-				eventParamModel.setRemoteAddress(req.getChannel().getConnection().getRemoteAddress());
+
+				InetSocketAddress proxyAddress = (InetSocketAddress) msgExchange.getChannel().getConnection()
+						.getRemoteAddress();
+				eventParamModel.setIpAddress(proxyAddress.getAddress().getHostAddress());
+				eventParamModel.setPort(proxyAddress.getPort());
 
 				EventModel eventModel = new EventModel("onFindServers", eventParamModel);
 				EventLogUtil.writeToServerEventLog(eventModel);
 
 			}
 
-			req.sendResponse(response);
+			msgExchange.sendResponse(response);
 		}
 	}
 
 	static class RoverNodemanagementServiceHandler implements NodeManagementServiceSetHandler {
 
-		public void onAddNodes(EndpointServiceRequest<AddNodesRequest, AddNodesResponse> req)
+		public void onAddNodes(EndpointServiceRequest<AddNodesRequest, AddNodesResponse> msgExchange)
 				throws ServiceFaultException {
 
-			AddNodesRequest request = req.getRequest();
+			AddNodesRequest request = msgExchange.getRequest();
 			AddNodesItem[] nodesToAdd = request.getNodesToAdd();
 			AddNodesResponse response = new AddNodesResponse();
-			AddNodesResult[] addNodesResult = new AddNodesResult[req.getRequest().getNodesToAdd().length];
+			AddNodesResult[] addNodesResult = new AddNodesResult[msgExchange.getRequest().getNodesToAdd().length];
 			IEncodeable iEncodeable = userAuthorization
-					.get(req.getRequest().getRequestHeader().getAuthenticationToken());
+					.get(msgExchange.getRequest().getRequestHeader().getAuthenticationToken());
 			String authorisation = GenericUtil.readServerPropertyConfigFile("authorisation");
 			if ("true".equalsIgnoreCase(authorisation)) {
 				if (!(iEncodeable instanceof AnonymousIdentityToken)) {
@@ -343,13 +348,17 @@ public class RoverAServer {
 				eventParamModel.setAuthenToken(request.getRequestHeader().getAuthenticationToken().toString());
 				eventParamModel.setAuditId(request.getRequestHeader().getAuditEntryId());
 				eventParamModel.setSessionId(null);
-				eventParamModel.setRemoteAddress(req.getChannel().getConnection().getRemoteAddress());
+
+				InetSocketAddress proxyAddress = (InetSocketAddress) msgExchange.getChannel().getConnection()
+						.getRemoteAddress();
+				eventParamModel.setIpAddress(proxyAddress.getAddress().getHostAddress());
+				eventParamModel.setPort(proxyAddress.getPort());
 
 				EventModel eventModel = new EventModel("onAddNodes", eventParamModel);
 				EventLogUtil.writeToServerEventLog(eventModel);
 			}
 
-			req.sendResponse(response);
+			msgExchange.sendResponse(response);
 
 		}
 
@@ -401,61 +410,64 @@ public class RoverAServer {
 			}
 		}
 
-		public void onAddReferences(EndpointServiceRequest<AddReferencesRequest, AddReferencesResponse> req)
+		public void onAddReferences(EndpointServiceRequest<AddReferencesRequest, AddReferencesResponse> msgExchange)
 				throws ServiceFaultException {
 			throw new ServiceFaultException(ServiceFault.createServiceFault(StatusCodes.Bad_NotImplemented));
 
 		}
 
-		public void onDeleteNodes(EndpointServiceRequest<DeleteNodesRequest, DeleteNodesResponse> req)
+		public void onDeleteNodes(EndpointServiceRequest<DeleteNodesRequest, DeleteNodesResponse> msgExchange)
 				throws ServiceFaultException {
 			throw new ServiceFaultException(ServiceFault.createServiceFault(StatusCodes.Bad_NotImplemented));
 
 		}
 
-		public void onDeleteReferences(EndpointServiceRequest<DeleteReferencesRequest, DeleteReferencesResponse> req)
+		public void onDeleteReferences(
+				EndpointServiceRequest<DeleteReferencesRequest, DeleteReferencesResponse> msgExchange)
 				throws ServiceFaultException {
 			throw new ServiceFaultException(ServiceFault.createServiceFault(StatusCodes.Bad_NotImplemented));
 
 		}
 
-		public void onBrowse(EndpointServiceRequest<BrowseRequest, BrowseResponse> req) throws ServiceFaultException {
+		public void onBrowse(EndpointServiceRequest<BrowseRequest, BrowseResponse> msgExchange)
+				throws ServiceFaultException {
 			throw new ServiceFaultException(ServiceFault.createServiceFault(StatusCodes.Bad_NotImplemented));
 
 		}
 
-		public void onBrowseNext(EndpointServiceRequest<BrowseNextRequest, BrowseNextResponse> req)
+		public void onBrowseNext(EndpointServiceRequest<BrowseNextRequest, BrowseNextResponse> msgExchange)
 				throws ServiceFaultException {
 			throw new ServiceFaultException(ServiceFault.createServiceFault(StatusCodes.Bad_NotImplemented));
 
 		}
 
 		public void onTranslateBrowsePathsToNodeIds(
-				EndpointServiceRequest<TranslateBrowsePathsToNodeIdsRequest, TranslateBrowsePathsToNodeIdsResponse> req)
+				EndpointServiceRequest<TranslateBrowsePathsToNodeIdsRequest, TranslateBrowsePathsToNodeIdsResponse> msgExchange)
 				throws ServiceFaultException {
 			throw new ServiceFaultException(ServiceFault.createServiceFault(StatusCodes.Bad_NotImplemented));
 
 		}
 
-		public void onRegisterNodes(EndpointServiceRequest<RegisterNodesRequest, RegisterNodesResponse> req)
+		public void onRegisterNodes(EndpointServiceRequest<RegisterNodesRequest, RegisterNodesResponse> msgExchange)
 				throws ServiceFaultException {
 			throw new ServiceFaultException(ServiceFault.createServiceFault(StatusCodes.Bad_NotImplemented));
 
 		}
 
-		public void onUnregisterNodes(EndpointServiceRequest<UnregisterNodesRequest, UnregisterNodesResponse> req)
+		public void onUnregisterNodes(
+				EndpointServiceRequest<UnregisterNodesRequest, UnregisterNodesResponse> msgExchange)
 				throws ServiceFaultException {
 			throw new ServiceFaultException(ServiceFault.createServiceFault(StatusCodes.Bad_NotImplemented));
 
 		}
 
-		public void onQueryFirst(EndpointServiceRequest<QueryFirstRequest, QueryFirstResponse> req)
+		public void onQueryFirst(EndpointServiceRequest<QueryFirstRequest, QueryFirstResponse> msgExchange)
 				throws ServiceFaultException {
 			throw new ServiceFaultException(ServiceFault.createServiceFault(StatusCodes.Bad_NotImplemented));
 
 		}
 
-		public void onQueryNext(EndpointServiceRequest<QueryNextRequest, QueryNextResponse> req)
+		public void onQueryNext(EndpointServiceRequest<QueryNextRequest, QueryNextResponse> msgExchange)
 				throws ServiceFaultException {
 			throw new ServiceFaultException(ServiceFault.createServiceFault(StatusCodes.Bad_NotImplemented));
 
@@ -465,12 +477,12 @@ public class RoverAServer {
 
 	static class RoverAttributeServiceHandler implements AttributeServiceSetHandler {
 
-		public void onHistoryRead(EndpointServiceRequest<HistoryReadRequest, HistoryReadResponse> req)
+		public void onHistoryRead(EndpointServiceRequest<HistoryReadRequest, HistoryReadResponse> msgExchange)
 				throws ServiceFaultException {
 			throw new ServiceFaultException(ServiceFault.createServiceFault(StatusCodes.Bad_NotImplemented));
 		}
 
-		public void onHistoryUpdate(EndpointServiceRequest<HistoryUpdateRequest, HistoryUpdateResponse> req)
+		public void onHistoryUpdate(EndpointServiceRequest<HistoryUpdateRequest, HistoryUpdateResponse> msgExchange)
 				throws ServiceFaultException {
 			throw new ServiceFaultException(ServiceFault.createServiceFault(StatusCodes.Bad_NotImplemented));
 		}
@@ -479,8 +491,8 @@ public class RoverAServer {
 		 * Handle read request.
 		 */
 
-		public void onRead(EndpointServiceRequest<ReadRequest, ReadResponse> req) throws ServiceFaultException {
-			ReadRequest request = req.getRequest();
+		public void onRead(EndpointServiceRequest<ReadRequest, ReadResponse> msgExchange) throws ServiceFaultException {
+			ReadRequest request = msgExchange.getRequest();
 			ReadValueId[] nodesToRead = request.getNodesToRead();
 
 			DataValue[] results = null;
@@ -584,34 +596,49 @@ public class RoverAServer {
 
 			if (GenericUtil.enableAuditing("onRead")) {
 				EventParamModel eventParamModel = new EventParamModel();
-				eventParamModel.setAuthenToken(req.getRequest().getRequestHeader().getAuthenticationToken().toString());
-				eventParamModel.setAuditId(req.getRequest().getRequestHeader().getAuditEntryId());
+				eventParamModel.setAuthenToken(
+						msgExchange.getRequest().getRequestHeader().getAuthenticationToken().toString());
+				eventParamModel.setAuditId(msgExchange.getRequest().getRequestHeader().getAuditEntryId());
 				eventParamModel.setSessionId(null);
-				eventParamModel.setRemoteAddress(req.getChannel().getConnection().getRemoteAddress());
+
+				/*
+				 * String text =
+				 * JSONUtil.getJSONString(req.getChannel().getConnection().
+				 * getRemoteAddress());
+				 * 
+				 * RemoteAddressModel remoteAddressModel = (RemoteAddressModel)
+				 * JSONUtil.getObjFromJSONString(text, new
+				 * RemoteAddressModel());
+				 * 
+				 * eventParamModel.setRemoteAddress(remoteAddressModel);
+				 */
+
+				InetSocketAddress proxyAddress = (InetSocketAddress) msgExchange.getChannel().getConnection()
+						.getRemoteAddress();
+				eventParamModel.setIpAddress(proxyAddress.getAddress().getHostAddress());
+				eventParamModel.setPort(proxyAddress.getPort());
 
 				EventModel eventModel = new EventModel("onRead", eventParamModel);
 				EventLogUtil.writeToServerEventLog(eventModel);
-				
-				//GenericUtil.getCountryDetails(eventParamModel.getRemoteAddress());
-				
-				
+
 			}
-			req.sendResponse(response);
+			msgExchange.sendResponse(response);
 		}
 
 		/**
 		 * Handle write request.
 		 */
 
-		public void onWrite(EndpointServiceRequest<WriteRequest, WriteResponse> req) throws ServiceFaultException {
+		public void onWrite(EndpointServiceRequest<WriteRequest, WriteResponse> msgExchange)
+				throws ServiceFaultException {
 
-			WriteRequest request = req.getRequest();
+			WriteRequest request = msgExchange.getRequest();
 			WriteValue[] nodesToWrite = request.getNodesToWrite();
 
 			StatusCode[] results = null;
 			StatusCode serviceResultCode = null;
 			IEncodeable iEncodeable = userAuthorization
-					.get(req.getRequest().getRequestHeader().getAuthenticationToken());
+					.get(msgExchange.getRequest().getRequestHeader().getAuthenticationToken());
 
 			String authorisation = GenericUtil.readServerPropertyConfigFile("authorisation");
 			if ("true".equalsIgnoreCase(authorisation)) {
@@ -790,16 +817,21 @@ public class RoverAServer {
 
 			if (GenericUtil.enableAuditing("onWrite")) {
 				EventParamModel eventParamModel = new EventParamModel();
-				eventParamModel.setAuthenToken(req.getRequest().getRequestHeader().getAuthenticationToken().toString());
-				eventParamModel.setAuditId(req.getRequest().getRequestHeader().getAuditEntryId());
+				eventParamModel.setAuthenToken(
+						msgExchange.getRequest().getRequestHeader().getAuthenticationToken().toString());
+				eventParamModel.setAuditId(msgExchange.getRequest().getRequestHeader().getAuditEntryId());
 				eventParamModel.setSessionId(null);
-				eventParamModel.setRemoteAddress(req.getChannel().getConnection().getRemoteAddress());
+
+				InetSocketAddress proxyAddress = (InetSocketAddress) msgExchange.getChannel().getConnection()
+						.getRemoteAddress();
+				eventParamModel.setIpAddress(proxyAddress.getAddress().getHostAddress());
+				eventParamModel.setPort(proxyAddress.getPort());
 
 				EventModel eventModel = new EventModel("onWrite", eventParamModel);
 				EventLogUtil.writeToServerEventLog(eventModel);
 			}
 
-			req.sendResponse(response);
+			msgExchange.sendResponse(response);
 		}
 
 	}
@@ -1282,7 +1314,10 @@ public class RoverAServer {
 
 			if (GenericUtil.enableAuditing("onActivateSession")) {
 
-				activeSessionEventParam.setRemoteAddress(msgExchange.getChannel().getConnection().getRemoteAddress());
+				InetSocketAddress proxyAddress = (InetSocketAddress) msgExchange.getChannel().getConnection()
+						.getRemoteAddress();
+				activeSessionEventParam.setIpAddress(proxyAddress.getAddress().getHostAddress());
+				activeSessionEventParam.setPort(proxyAddress.getPort());
 
 				EventModel eventModel = new EventModel("onActivateSession", activeSessionEventParam);
 				EventLogUtil.writeToServerEventLog(eventModel);
@@ -1404,7 +1439,10 @@ public class RoverAServer {
 				CreateSessionEventParam createSessionObject = EventLogUtil.populateCreateSessionObject(
 						response.getSessionId(), response.getAuthenticationToken(), request, response);
 
-				createSessionObject.setRemoteAddress(msgExchange.getChannel().getConnection().getRemoteAddress());
+				InetSocketAddress proxyAddress = (InetSocketAddress) msgExchange.getChannel().getConnection()
+						.getRemoteAddress();
+				createSessionObject.setIpAddress(proxyAddress.getAddress().getHostAddress());
+				createSessionObject.setPort(proxyAddress.getPort());
 
 				EventModel eventModel = new EventModel("onCreateSession", createSessionObject);
 				EventLogUtil.writeToServerEventLog(eventModel);

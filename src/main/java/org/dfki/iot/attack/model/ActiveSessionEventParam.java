@@ -1,7 +1,5 @@
 package org.dfki.iot.attack.model;
 
-import java.net.SocketAddress;
-
 /**
  * 
  * @author sriharsha
@@ -11,7 +9,8 @@ public class ActiveSessionEventParam {
 	private String sessionId;
 	private String authenToken;
 	private String userName;
-	private SocketAddress remoteAddress;
+	private String ipAddress;
+	private int port;
 
 	public ActiveSessionEventParam() {
 		super();
@@ -41,20 +40,20 @@ public class ActiveSessionEventParam {
 		this.userName = userName;
 	}
 
-	public ActiveSessionEventParam(String sessionId, String authenToken, String userName, SocketAddress remoteAddress) {
-		super();
-		this.sessionId = sessionId;
-		this.authenToken = authenToken;
-		this.userName = userName;
-		this.remoteAddress = remoteAddress;
+	public String getIpAddress() {
+		return ipAddress;
 	}
 
-	public SocketAddress getRemoteAddress() {
-		return remoteAddress;
+	public void setIpAddress(String ipAddress) {
+		this.ipAddress = ipAddress;
 	}
 
-	public void setRemoteAddress(SocketAddress remoteAddress) {
-		this.remoteAddress = remoteAddress;
+	public int getPort() {
+		return port;
+	}
+
+	public void setPort(int port) {
+		this.port = port;
 	}
 
 	@Override
@@ -62,7 +61,8 @@ public class ActiveSessionEventParam {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((authenToken == null) ? 0 : authenToken.hashCode());
-		result = prime * result + ((remoteAddress == null) ? 0 : remoteAddress.hashCode());
+		result = prime * result + ((ipAddress == null) ? 0 : ipAddress.hashCode());
+		result = prime * result + port;
 		result = prime * result + ((sessionId == null) ? 0 : sessionId.hashCode());
 		result = prime * result + ((userName == null) ? 0 : userName.hashCode());
 		return result;
@@ -82,10 +82,12 @@ public class ActiveSessionEventParam {
 				return false;
 		} else if (!authenToken.equals(other.authenToken))
 			return false;
-		if (remoteAddress == null) {
-			if (other.remoteAddress != null)
+		if (ipAddress == null) {
+			if (other.ipAddress != null)
 				return false;
-		} else if (!remoteAddress.equals(other.remoteAddress))
+		} else if (!ipAddress.equals(other.ipAddress))
+			return false;
+		if (port != other.port)
 			return false;
 		if (sessionId == null) {
 			if (other.sessionId != null)
@@ -103,7 +105,23 @@ public class ActiveSessionEventParam {
 	@Override
 	public String toString() {
 		return "ActiveSessionEventParam [sessionId=" + sessionId + ", authenToken=" + authenToken + ", userName="
-				+ userName + ", remoteAddress=" + remoteAddress + "]";
+				+ userName + ", ipAddress=" + ipAddress + ", port=" + port + "]";
+	}
+
+	/**
+	 * @param sessionId
+	 * @param authenToken
+	 * @param userName
+	 * @param ipAddress
+	 * @param port
+	 */
+	public ActiveSessionEventParam(String sessionId, String authenToken, String userName, String ipAddress, int port) {
+		super();
+		this.sessionId = sessionId;
+		this.authenToken = authenToken;
+		this.userName = userName;
+		this.ipAddress = ipAddress;
+		this.port = port;
 	}
 
 }
