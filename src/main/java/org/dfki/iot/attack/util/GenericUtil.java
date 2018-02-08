@@ -133,27 +133,32 @@ public class GenericUtil {
 
 	public static CountryModel getCountryDetails(String ipAddress) throws IOException, GeoIp2Exception {
 
-		DatabaseReader dbReader = new DatabaseReader.Builder(cityDatabase).build();
+		String isLocalEnvironment = GenericUtil.readClientPropertyConfigFile("isLocalEnvironment");
 
-		InetAddress inetAddress = InetAddress.getByName(ipAddress);
-		CityResponse cityResponse = dbReader.city(inetAddress);
+		if ("true".equals(isLocalEnvironment)) {
 
-		String countryName = cityResponse.getCountry().getName();
-		String continent = cityResponse.getContinent().getName();
-		String cityName = cityResponse.getCity().getName();
-		Double latitude = cityResponse.getLocation().getLatitude();
-		Double longitude = cityResponse.getLocation().getLongitude();
+			return new CountryModel("Germany", "EU", "KL", 20.1, 20.2);
 
-		CountryModel countryModel = new CountryModel(countryName, continent, cityName, latitude, longitude);
+		} else {
 
-		return countryModel;
+			DatabaseReader dbReader = new DatabaseReader.Builder(cityDatabase).build();
 
+			InetAddress inetAddress = InetAddress.getByName(ipAddress);
+			CityResponse cityResponse = dbReader.city(inetAddress);
+
+			String countryName = cityResponse.getCountry().getName();
+			String continent = cityResponse.getContinent().getName();
+			String cityName = cityResponse.getCity().getName();
+			Double latitude = cityResponse.getLocation().getLatitude();
+			Double longitude = cityResponse.getLocation().getLongitude();
+
+			return new CountryModel(countryName, continent, cityName, latitude, longitude);
+
+		}
 	}
 
 	public static void generateCharts() {
 
 	}
-	
-	
 
 }

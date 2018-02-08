@@ -20,8 +20,8 @@ import org.slf4j.LoggerFactory;
 public class EventLogUtil {
 
 	private static final Logger myLogger = LoggerFactory.getLogger(EventLogUtil.class);
-	private static final File serverEventLogfile = new File("./src/main/resources/event.log");
-	private static final File clientEventLogfile = new File("./src/main/resources/clientEvents.log ");
+	private static final File serverEventLogfile = new File("./src/main/resources/logs/event.log");
+	private static final File clientEventLogfile = new File("./src/main/resources/logs/clientEvents.log ");
 
 	public static void main(String[] args) {
 

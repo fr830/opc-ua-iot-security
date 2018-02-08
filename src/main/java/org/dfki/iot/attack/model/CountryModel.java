@@ -49,6 +49,12 @@ public class CountryModel {
 	}
 
 	@Override
+	public String toString() {
+		return "CountryModel [countryName=" + countryName + ", continent=" + continent + ", city=" + city
+				+ ", latitude=" + latitude + ", longitude=" + longitude + "]";
+	}
+
+	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
@@ -95,12 +101,6 @@ public class CountryModel {
 		} else if (!longitude.equals(other.longitude))
 			return false;
 		return true;
-	}
-
-	@Override
-	public String toString() {
-		return "CountryModel [countryName=" + countryName + ", continent=" + continent + ", city=" + city
-				+ ", latitude=" + latitude + ", longitude=" + longitude + "]";
 	}
 
 	/**

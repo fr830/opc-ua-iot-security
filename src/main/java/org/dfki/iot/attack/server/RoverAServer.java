@@ -1,6 +1,7 @@
 package org.dfki.iot.attack.server;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -24,6 +25,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.dfki.iot.attack.model.ActiveSessionEventParam;
 import org.dfki.iot.attack.model.CountryModel;
@@ -33,6 +35,7 @@ import org.dfki.iot.attack.model.EventParamModel;
 import org.dfki.iot.attack.util.EventLogUtil;
 import org.dfki.iot.attack.util.ExampleKeys;
 import org.dfki.iot.attack.util.GenericUtil;
+import org.dfki.iot.attack.util.JSONUtil;
 import org.opcfoundation.ua.application.Application;
 import org.opcfoundation.ua.application.Server;
 import org.opcfoundation.ua.builtintypes.ByteString;
@@ -132,6 +135,8 @@ import org.opcfoundation.ua.utils.EndpointUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.maxmind.geoip2.exception.GeoIp2Exception;
+
 public class RoverAServer {
 
 	private static final Logger logger = LoggerFactory.getLogger(RoverAServer.class);
@@ -150,7 +155,8 @@ public class RoverAServer {
 	static RoverAServerExample roverServer;
 
 	// To store all the country wise ip address count
-	static HashMap<String, CountryModel> countryChartMap = new HashMap<String, CountryModel>();
+	static HashMap<String, HashMap<String, Integer>> continentCountryMap = new HashMap<String, HashMap<String, Integer>>();
+	private static final File continentCountryMapJSONFile = new File("./src/main/resources/continentCountryMap.json");
 
 	/**
 	 * Class to represent ContinuationPoint. This Server supports one
@@ -265,9 +271,11 @@ public class RoverAServer {
 		 * @param msgExchange
 		 *            EndpointServiceRequest
 		 * @throws ServiceFaultException
+		 * @throws GeoIp2Exception
+		 * @throws IOException
 		 */
 		public void onFindServers(EndpointServiceRequest<FindServersRequest, FindServersResponse> msgExchange)
-				throws ServiceFaultException {
+				throws ServiceFaultException, IOException, GeoIp2Exception {
 			FindServersRequest request = msgExchange.getRequest();
 
 			ApplicationDescription[] servers = new ApplicationDescription[1];
@@ -307,8 +315,11 @@ public class RoverAServer {
 
 				InetSocketAddress proxyAddress = (InetSocketAddress) msgExchange.getChannel().getConnection()
 						.getRemoteAddress();
-				eventParamModel.setIpAddress(proxyAddress.getAddress().getHostAddress());
+				String ipAddress = proxyAddress.getAddress().getHostAddress();
+				eventParamModel.setIpAddress(ipAddress);
 				eventParamModel.setPort(proxyAddress.getPort());
+
+				addToContinentCountryMap(ipAddress);
 
 				EventModel eventModel = new EventModel("onFindServers", eventParamModel);
 				EventLogUtil.writeToServerEventLog(eventModel);
@@ -317,6 +328,7 @@ public class RoverAServer {
 
 			msgExchange.sendResponse(response);
 		}
+
 	}
 
 	static class RoverNodemanagementServiceHandler implements NodeManagementServiceSetHandler {
@@ -353,6 +365,15 @@ public class RoverAServer {
 						.getRemoteAddress();
 				eventParamModel.setIpAddress(proxyAddress.getAddress().getHostAddress());
 				eventParamModel.setPort(proxyAddress.getPort());
+
+				String ipAddress = proxyAddress.getAddress().getHostAddress();
+				try {
+					addToContinentCountryMap(ipAddress);
+				} catch (IOException e) {
+					e.printStackTrace();
+				} catch (GeoIp2Exception e) {
+					e.printStackTrace();
+				}
 
 				EventModel eventModel = new EventModel("onAddNodes", eventParamModel);
 				EventLogUtil.writeToServerEventLog(eventModel);
@@ -601,22 +622,19 @@ public class RoverAServer {
 				eventParamModel.setAuditId(msgExchange.getRequest().getRequestHeader().getAuditEntryId());
 				eventParamModel.setSessionId(null);
 
-				/*
-				 * String text =
-				 * JSONUtil.getJSONString(req.getChannel().getConnection().
-				 * getRemoteAddress());
-				 * 
-				 * RemoteAddressModel remoteAddressModel = (RemoteAddressModel)
-				 * JSONUtil.getObjFromJSONString(text, new
-				 * RemoteAddressModel());
-				 * 
-				 * eventParamModel.setRemoteAddress(remoteAddressModel);
-				 */
-
 				InetSocketAddress proxyAddress = (InetSocketAddress) msgExchange.getChannel().getConnection()
 						.getRemoteAddress();
 				eventParamModel.setIpAddress(proxyAddress.getAddress().getHostAddress());
 				eventParamModel.setPort(proxyAddress.getPort());
+
+				String ipAddress = proxyAddress.getAddress().getHostAddress();
+				try {
+					addToContinentCountryMap(ipAddress);
+				} catch (IOException e) {
+					e.printStackTrace();
+				} catch (GeoIp2Exception e) {
+					e.printStackTrace();
+				}
 
 				EventModel eventModel = new EventModel("onRead", eventParamModel);
 				EventLogUtil.writeToServerEventLog(eventModel);
@@ -826,6 +844,15 @@ public class RoverAServer {
 						.getRemoteAddress();
 				eventParamModel.setIpAddress(proxyAddress.getAddress().getHostAddress());
 				eventParamModel.setPort(proxyAddress.getPort());
+
+				String ipAddress = proxyAddress.getAddress().getHostAddress();
+				try {
+					addToContinentCountryMap(ipAddress);
+				} catch (IOException e) {
+					e.printStackTrace();
+				} catch (GeoIp2Exception e) {
+					e.printStackTrace();
+				}
 
 				EventModel eventModel = new EventModel("onWrite", eventParamModel);
 				EventLogUtil.writeToServerEventLog(eventModel);
@@ -1316,8 +1343,18 @@ public class RoverAServer {
 
 				InetSocketAddress proxyAddress = (InetSocketAddress) msgExchange.getChannel().getConnection()
 						.getRemoteAddress();
+
 				activeSessionEventParam.setIpAddress(proxyAddress.getAddress().getHostAddress());
 				activeSessionEventParam.setPort(proxyAddress.getPort());
+
+				String ipAddress = proxyAddress.getAddress().getHostAddress();
+				try {
+					addToContinentCountryMap(ipAddress);
+				} catch (IOException e) {
+					e.printStackTrace();
+				} catch (GeoIp2Exception e) {
+					e.printStackTrace();
+				}
 
 				EventModel eventModel = new EventModel("onActivateSession", activeSessionEventParam);
 				EventLogUtil.writeToServerEventLog(eventModel);
@@ -1443,6 +1480,15 @@ public class RoverAServer {
 						.getRemoteAddress();
 				createSessionObject.setIpAddress(proxyAddress.getAddress().getHostAddress());
 				createSessionObject.setPort(proxyAddress.getPort());
+
+				String ipAddress = proxyAddress.getAddress().getHostAddress();
+				try {
+					addToContinentCountryMap(ipAddress);
+				} catch (IOException e) {
+					e.printStackTrace();
+				} catch (GeoIp2Exception e) {
+					e.printStackTrace();
+				}
 
 				EventModel eventModel = new EventModel("onCreateSession", createSessionObject);
 				EventLogUtil.writeToServerEventLog(eventModel);
@@ -1573,12 +1619,9 @@ public class RoverAServer {
 
 	public static class ChartSchedulerTask extends TimerTask {
 
-		/**
-		 * Implements TimerTask's abstract run method.
-		 */
 		@Override
 		public void run() {
-			System.out.println("..............................Testing Scheduler...................................");
+			storeContinentCountryMap();
 
 		}
 
@@ -1586,12 +1629,55 @@ public class RoverAServer {
 
 	private static Date getTomorrowMorning1am() {
 		Calendar tomorrow = new GregorianCalendar();
-		tomorrow.add(Calendar.DATE, 1);
+		tomorrow.add(Calendar.DATE, 0);
 
 		Calendar result = new GregorianCalendar(tomorrow.get(Calendar.YEAR), tomorrow.get(Calendar.MONTH),
-				tomorrow.get(Calendar.DATE), 1, 0);
+				tomorrow.get(Calendar.DATE), 14, 07);
 
 		return result.getTime();
+	}
+
+	private static void addToContinentCountryMap(String ipAddress) throws IOException, GeoIp2Exception {
+
+		CountryModel newCountryModel = GenericUtil.getCountryDetails(ipAddress);
+		String countryName = newCountryModel.getCountryName();
+		String continent = newCountryModel.getContinent();
+
+		if (continentCountryMap.containsKey(continent)) {
+			HashMap<String, Integer> exisitingCountryMap = continentCountryMap.get(continent);
+			if (exisitingCountryMap.containsKey(countryName)) {
+				Integer exisitingCountyCount = exisitingCountryMap.get(countryName);
+				exisitingCountryMap.put(countryName, ++exisitingCountyCount);
+				continentCountryMap.put(continent, exisitingCountryMap);
+				return;
+			} else {
+				// when there is a new country ip found
+				exisitingCountryMap.put(countryName, 1);
+				continentCountryMap.put(continent, exisitingCountryMap);
+				return;
+			}
+		} else {
+			HashMap<String, Integer> newCountryMap = new HashMap<String, Integer>();
+			newCountryMap.put(countryName, 1);
+			continentCountryMap.put(continent, newCountryMap);
+			return;
+		}
+	}
+
+	/***
+	 * stores the continentCountryMap vlaue into continentCountryMap.json for a
+	 * regular time interval.
+	 * 
+	 */
+	private static void storeContinentCountryMap() {
+
+		String text = JSONUtil.getJSONString(continentCountryMap, true);
+		try {
+			FileUtils.write(continentCountryMapJSONFile, text);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
 	}
 
 	/***
@@ -1625,6 +1711,19 @@ public class RoverAServer {
 		roverServer.addServiceHandler(new RoverNodemanagementServiceHandler());
 
 		CryptoUtil.setCryptoProvider(new BcCryptoProvider());
+
+		/**
+		 * read from continentCountryMap.json file during initial Load
+		 * continentCountryMap
+		 */
+
+		if (continentCountryMapJSONFile.exists()) {
+			String str = FileUtils.readFileToString(continentCountryMapJSONFile);
+			continentCountryMap = (HashMap<String, HashMap<String, Integer>>) JSONUtil
+					.getContinentCountryMapFromJSONString(str);
+		} else {
+			continentCountryMapJSONFile.createNewFile();
+		}
 
 		/***
 		 * chartSchedulerTask will get all the values from country hashMap and
