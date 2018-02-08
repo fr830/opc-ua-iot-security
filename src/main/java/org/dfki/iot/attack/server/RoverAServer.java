@@ -319,7 +319,7 @@ public class RoverAServer {
 				eventParamModel.setIpAddress(ipAddress);
 				eventParamModel.setPort(proxyAddress.getPort());
 
-				addToContinentCountryMap(ipAddress);
+				continentCountryMap = GenericUtil.addToContinentCountryMap(ipAddress, continentCountryMap);
 
 				EventModel eventModel = new EventModel("onFindServers", eventParamModel);
 				EventLogUtil.writeToServerEventLog(eventModel);
@@ -368,7 +368,7 @@ public class RoverAServer {
 
 				String ipAddress = proxyAddress.getAddress().getHostAddress();
 				try {
-					addToContinentCountryMap(ipAddress);
+					continentCountryMap = GenericUtil.addToContinentCountryMap(ipAddress, continentCountryMap);
 				} catch (IOException e) {
 					e.printStackTrace();
 				} catch (GeoIp2Exception e) {
@@ -629,7 +629,8 @@ public class RoverAServer {
 
 				String ipAddress = proxyAddress.getAddress().getHostAddress();
 				try {
-					addToContinentCountryMap(ipAddress);
+
+					continentCountryMap = GenericUtil.addToContinentCountryMap(ipAddress, continentCountryMap);
 				} catch (IOException e) {
 					e.printStackTrace();
 				} catch (GeoIp2Exception e) {
@@ -847,7 +848,7 @@ public class RoverAServer {
 
 				String ipAddress = proxyAddress.getAddress().getHostAddress();
 				try {
-					addToContinentCountryMap(ipAddress);
+					continentCountryMap = GenericUtil.addToContinentCountryMap(ipAddress, continentCountryMap);
 				} catch (IOException e) {
 					e.printStackTrace();
 				} catch (GeoIp2Exception e) {
@@ -1349,7 +1350,7 @@ public class RoverAServer {
 
 				String ipAddress = proxyAddress.getAddress().getHostAddress();
 				try {
-					addToContinentCountryMap(ipAddress);
+					continentCountryMap = GenericUtil.addToContinentCountryMap(ipAddress, continentCountryMap);
 				} catch (IOException e) {
 					e.printStackTrace();
 				} catch (GeoIp2Exception e) {
@@ -1483,7 +1484,7 @@ public class RoverAServer {
 
 				String ipAddress = proxyAddress.getAddress().getHostAddress();
 				try {
-					addToContinentCountryMap(ipAddress);
+					continentCountryMap = GenericUtil.addToContinentCountryMap(ipAddress, continentCountryMap);
 				} catch (IOException e) {
 					e.printStackTrace();
 				} catch (GeoIp2Exception e) {
@@ -1635,33 +1636,6 @@ public class RoverAServer {
 				tomorrow.get(Calendar.DATE), 14, 07);
 
 		return result.getTime();
-	}
-
-	private static void addToContinentCountryMap(String ipAddress) throws IOException, GeoIp2Exception {
-
-		CountryModel newCountryModel = GenericUtil.getCountryDetails(ipAddress);
-		String countryName = newCountryModel.getCountryName();
-		String continent = newCountryModel.getContinent();
-
-		if (continentCountryMap.containsKey(continent)) {
-			HashMap<String, Integer> exisitingCountryMap = continentCountryMap.get(continent);
-			if (exisitingCountryMap.containsKey(countryName)) {
-				Integer exisitingCountyCount = exisitingCountryMap.get(countryName);
-				exisitingCountryMap.put(countryName, ++exisitingCountyCount);
-				continentCountryMap.put(continent, exisitingCountryMap);
-				return;
-			} else {
-				// when there is a new country ip found
-				exisitingCountryMap.put(countryName, 1);
-				continentCountryMap.put(continent, exisitingCountryMap);
-				return;
-			}
-		} else {
-			HashMap<String, Integer> newCountryMap = new HashMap<String, Integer>();
-			newCountryMap.put(countryName, 1);
-			continentCountryMap.put(continent, newCountryMap);
-			return;
-		}
 	}
 
 	/***
