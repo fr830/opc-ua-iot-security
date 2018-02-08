@@ -68,9 +68,12 @@ public class GenericUtil {
 								 * 
 								 */
 
-		HashMap<String, HashMap<String, Integer>> continentCountryMap = extractIpDetailsFromLogs();
+		// HashMap<String, HashMap<String, Integer>> continentCountryMap =
+		// extractContinentCountryMapFromLogs();
+		// HashMap<String, Integer> ipRequestCountMap =
+		// extractIpRequestCountMapFromLogs();
+		generateCharts();
 
-		
 	}
 
 	public static String readPropertyFile(String filename, String propertyName) {
@@ -184,6 +187,20 @@ public class GenericUtil {
 		/* } */
 	}
 
+	public static HashMap<String, Integer> addToIpRequestCountMap(String ipAddress,
+			HashMap<String, Integer> ipRequestCountMap) throws IOException, GeoIp2Exception {
+
+		if (ipRequestCountMap.containsKey(ipAddress)) {
+			Integer exisitingCountyCount = ipRequestCountMap.get(ipAddress);
+			ipRequestCountMap.put(ipAddress, ++exisitingCountyCount);
+			return ipRequestCountMap;
+		} else {
+			// when there is a new ip found
+			ipRequestCountMap.put(ipAddress, 1);
+			return ipRequestCountMap;
+		}
+	}
+
 	public static HashMap<String, HashMap<String, Integer>> addToContinentCountryMap(String ipAddress,
 			HashMap<String, HashMap<String, Integer>> continentCountryMap) throws IOException, GeoIp2Exception {
 
@@ -212,7 +229,54 @@ public class GenericUtil {
 		}
 	}
 
-	public static HashMap<String, HashMap<String, Integer>> extractIpDetailsFromLogs() {
+	static HashMap<String, Integer> extractIpRequestCountMapFromLogs() {
+
+		HashMap<String, Integer> ipRequestCountMap = new HashMap<String, Integer>();
+
+		final File folder = new File("./src/main/resources/logs");
+
+		try {
+
+			for (final File fileEntry : folder.listFiles()) {
+
+				if (fileEntry.getName() != null && fileEntry.getName().contains("log4j")) {
+
+					FileReader fileReader = new FileReader(fileEntry);
+					BufferedReader bufferedReader = new BufferedReader(fileReader);
+					String line;
+					while ((line = bufferedReader.readLine()) != null) {
+						if (line.contains("connected")) {
+							String ipAddress = null;
+							if (line.contains(".HttpsServer")) {
+								String[] value = line.split("<-> /");
+								String[] ip = value[1].split(" context=");
+								ipAddress = ip[0];
+							} else {
+
+								String[] value = line.split(": /");
+								String[] ip = value[1].split(":");
+								ipAddress = ip[0];
+							}
+							try {
+								addToIpRequestCountMap(ipAddress, ipRequestCountMap);
+							} catch (GeoIp2Exception e) {
+								e.printStackTrace();
+							}
+						}
+					}
+					fileReader.close();
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		System.out.println(ipRequestCountMap);
+		return ipRequestCountMap;
+
+	}
+
+	public static HashMap<String, HashMap<String, Integer>> extractContinentCountryMapFromLogs() {
 
 		HashMap<String, HashMap<String, Integer>> continentCountryMap = new HashMap<String, HashMap<String, Integer>>();
 
@@ -268,7 +332,7 @@ public class GenericUtil {
 		});
 
 		Collections.reverse(list);
-		
+
 		Map<K, V> result = new LinkedHashMap<K, V>();
 		for (Map.Entry<K, V> entry : list) {
 			result.put(entry.getKey(), entry.getValue());
@@ -277,6 +341,15 @@ public class GenericUtil {
 	}
 
 	public static void generateCharts() {
+
+		/*ChartExample.PiChartExample piExample = new ChartExample.PiChartExample();
+		piExample.main(null);
+
+		ChartExample.ContinentBarChart continentBarChart = new ChartExample.ContinentBarChart();
+		continentBarChart.main(null);*/
+
+		ChartExample.IpRequestBarChart ipRequestBarChart = new ChartExample.IpRequestBarChart();
+		ipRequestBarChart.main(null);
 
 	}
 
