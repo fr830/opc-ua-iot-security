@@ -32,47 +32,33 @@ public class GenericUtil {
 	private static final Logger myLogger = LoggerFactory.getLogger(GenericUtil.class);
 	private static final File cityDatabase = new File("./src/main/resources/GeoLite2-City.mmdb");
 
-	public static void main(String[] args) throws UnknownHostException,
-			SocketException {/*
-								 * 
-								 * myLogger.
-								 * info("To Get Temporary File Location : " +
-								 * System.getProperty("java.io.tmpdir"));
-								 * 
-								 * String current; try { current = new
-								 * java.io.File(".").getCanonicalPath();
-								 * myLogger.info("To Get Current dir :" +
-								 * current); } catch (IOException e) {
-								 * 
-								 * myLogger.info( "\n LocalizedMessage : " +
-								 * e.getLocalizedMessage() +
-								 * "\n  		 Message :: " + e.getMessage() +
-								 * "\n toString :: " + e.toString() +
-								 * "\n:		 StackTrace :: " +
-								 * e.getStackTrace());
-								 * 
-								 * }
-								 * 
-								 * String currentDir =
-								 * System.getProperty("user.dir");
-								 * myLogger.info("To Current dir using System:"
-								 * + currentDir);
-								 * 
-								 * // To Create a folder(directory) in current
-								 * working directory using java new
-								 * File(System.getProperty("user.dir") +
-								 * "/folder").mkdir();
-								 * 
-								 * getCurrentMachineIpAddress();
-								 * getCurrentMachineMACAddress();
-								 * 
-								 */
+	public static void main(String[] args) throws UnknownHostException, SocketException {
 
-		// HashMap<String, HashMap<String, Integer>> continentCountryMap =
-		// extractContinentCountryMapFromLogs();
-		// HashMap<String, Integer> ipRequestCountMap =
-		// extractIpRequestCountMapFromLogs();
-		generateCharts();
+		myLogger.info("To Get Temporary File Location : " + System.getProperty("java.io.tmpdir"));
+
+		String current;
+		try {
+			current = new java.io.File(".").getCanonicalPath();
+			myLogger.info("To Get Current dir :" + current);
+		} catch (IOException e) {
+
+			myLogger.info(
+					"\n LocalizedMessage : " + e.getLocalizedMessage() + "\n  		 Message :: " + e.getMessage()
+							+ "\n toString :: " + e.toString() + "\n:		 StackTrace :: " + e.getStackTrace());
+
+		}
+
+		String currentDir = System.getProperty("user.dir");
+		myLogger.info("To Current dir using System:" + currentDir);
+
+		// To Create a folder(directory) in current working directory using java
+		new File(System.getProperty("user.dir") + "/folder").mkdir();
+
+		getCurrentMachineIpAddress();
+		getCurrentMachineMACAddress();
+
+		HashMap<String, HashMap<String, Integer>> continentCountryMap = extractContinentCountryMapFromLogs();
+		HashMap<String, Integer> ipRequestCountMap = extractIpRequestCountMapFromLogs();
 
 	}
 
@@ -271,7 +257,6 @@ public class GenericUtil {
 			e.printStackTrace();
 		}
 
-		System.out.println(ipRequestCountMap);
 		return ipRequestCountMap;
 
 	}
@@ -318,7 +303,6 @@ public class GenericUtil {
 			e.printStackTrace();
 		}
 
-		System.out.println(continentCountryMap);
 		return continentCountryMap;
 
 	}
@@ -338,19 +322,6 @@ public class GenericUtil {
 			result.put(entry.getKey(), entry.getValue());
 		}
 		return result;
-	}
-
-	public static void generateCharts() {
-
-		/*ChartExample.PiChartExample piExample = new ChartExample.PiChartExample();
-		piExample.main(null);
-
-		ChartExample.ContinentBarChart continentBarChart = new ChartExample.ContinentBarChart();
-		continentBarChart.main(null);*/
-
-		ChartExample.IpRequestBarChart ipRequestBarChart = new ChartExample.IpRequestBarChart();
-		ipRequestBarChart.main(null);
-
 	}
 
 }

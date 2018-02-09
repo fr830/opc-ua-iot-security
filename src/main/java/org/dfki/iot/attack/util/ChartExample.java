@@ -3,6 +3,9 @@ package org.dfki.iot.attack.util;
 import java.util.HashMap;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -19,7 +22,9 @@ import javafx.stage.Stage;
 
 public class ChartExample {
 
-	public static class PiChartExample extends Application {
+	private static final Logger myLogger = LoggerFactory.getLogger(ChartExample.class);
+
+	public static class CountryPiChart extends Application {
 
 		@Override
 		public void start(Stage stage) {
@@ -156,6 +161,33 @@ public class ChartExample {
 
 		public static void main(String[] args) {
 			launch(args);
+		}
+	}
+
+	public static void generateCharts(String chartName) {
+
+		if (chartName.equalsIgnoreCase("CountryPiChart")) {
+			ChartExample.CountryPiChart piExample = new ChartExample.CountryPiChart();
+			piExample.main(null);
+		} else if (chartName.equalsIgnoreCase("ContinentBarChart")) {
+			ChartExample.ContinentBarChart continentBarChart = new ChartExample.ContinentBarChart();
+			continentBarChart.main(null);
+		} else if (chartName.equalsIgnoreCase("IpRequestBarChart")) {
+			ChartExample.IpRequestBarChart ipRequestBarChart = new ChartExample.IpRequestBarChart();
+			ipRequestBarChart.main(null);
+		} else {
+			myLogger.error(
+					"Usage: ChartExample [ Please provide one of the argument (CountryPiChart, ContinentBarChart, IpRequestBarChart)  ]");
+		}
+
+	}
+
+	public static void main(String[] args) {
+		if (args.length > 0 && null != args[0]) {
+			generateCharts(args[0]);
+		} else {
+			myLogger.error(
+					"Usage: ChartExample [ Please provide the argument (CountryPiChart, ContinentBarChart, IpRequestBarChart)  ]");
 		}
 	}
 }
