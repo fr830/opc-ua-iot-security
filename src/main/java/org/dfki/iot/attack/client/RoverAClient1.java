@@ -70,7 +70,7 @@ public class RoverAClient1 {
 		myClient.getApplication().getHttpsSettings().setKeyPair(myHttpsCertificate);
 		//////////////////////////////////////
 
-		ipAddress ="85.214.53.244"; 
+		//ipAddress ="85.214.53.244"; 
 		
 		if (("opc.tcp").equalsIgnoreCase(protocolType)) {
 

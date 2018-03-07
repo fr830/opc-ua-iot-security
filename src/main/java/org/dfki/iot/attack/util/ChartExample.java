@@ -85,7 +85,9 @@ public class ChartExample {
 			final CategoryAxis xAxis = new CategoryAxis();
 			final NumberAxis yAxis = new NumberAxis();
 			final BarChart<String, Number> bc = new BarChart<String, Number>(xAxis, yAxis);
-
+			
+			bc.setBarGap(-50);
+			
 			bc.setTitle("# Reqests based on continent");
 			xAxis.setLabel("Country");
 			yAxis.setLabel("# Number of Requests");
@@ -128,12 +130,12 @@ public class ChartExample {
 
 		@Override
 		public void start(Stage stage) {
-			stage.setTitle("Maximum # Reqests based by user (per IP address)");
+			stage.setTitle("Maximum # Requests per user (or per IP address)");
 			final CategoryAxis xAxis = new CategoryAxis();
 			final NumberAxis yAxis = new NumberAxis();
 			final BarChart<String, Number> bc = new BarChart<String, Number>(xAxis, yAxis);
 
-			bc.setTitle("Maximum # Reqests based by user (per IP address)");
+			bc.setTitle("Maximum # Requests per user (or per IP address)");
 			xAxis.setLabel("IP Address");
 			yAxis.setLabel("# Number of Requests/IPAddress");
 
