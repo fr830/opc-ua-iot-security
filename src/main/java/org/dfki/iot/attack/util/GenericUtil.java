@@ -9,8 +9,12 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -32,7 +36,7 @@ public class GenericUtil {
 	private static final Logger myLogger = LoggerFactory.getLogger(GenericUtil.class);
 	private static final File cityDatabase = new File("./src/main/resources/GeoLite2-City.mmdb");
 
-	public static void main(String[] args) throws UnknownHostException, SocketException {
+	public static void main(String[] args) throws UnknownHostException, SocketException, ParseException {
 
 		myLogger.info("To Get Temporary File Location : " + System.getProperty("java.io.tmpdir"));
 
@@ -59,6 +63,10 @@ public class GenericUtil {
 
 		HashMap<String, HashMap<String, Integer>> continentCountryMap = extractContinentCountryMapFromLogs();
 		HashMap<String, Integer> ipRequestCountMap = extractIpRequestCountMapFromLogs();
+
+		HashMap<Date, Integer> value = getNumberOfRequestPerDayFromLogs();
+		value = (HashMap<Date, Integer>) GenericUtil.sortByDateKey(value);
+		System.out.println(value);
 
 	}
 
@@ -307,6 +315,64 @@ public class GenericUtil {
 
 	}
 
+	public static HashMap<Date, Integer> getNumberOfRequestPerDayFromLogs() throws ParseException {
+
+		HashMap<Date, Integer> numberOfRequestPerDayMap = new HashMap<Date, Integer>();
+
+		final File folder = new File("./src/main/resources/logs");
+
+		try {
+
+			for (final File fileEntry : folder.listFiles()) {
+
+				if (fileEntry.getName() != null && fileEntry.getName().contains("log4j")) {
+
+					DateFormat df = new SimpleDateFormat("MM/dd/yyyy");
+					String dateStringParse = df.format(fileEntry.lastModified());
+					Date dateCreated = df.parse(dateStringParse);
+
+					System.out.println("creationTime: " + dateCreated);
+
+					Integer requestCount = 0;
+					if (numberOfRequestPerDayMap.keySet().contains(dateCreated)) {
+						requestCount = numberOfRequestPerDayMap.get(dateCreated);
+					}
+
+					FileReader fileReader = new FileReader(fileEntry);
+					BufferedReader bufferedReader = new BufferedReader(fileReader);
+					String line;
+
+					while ((line = bufferedReader.readLine()) != null) {
+						if (line.contains("connected")) {
+
+							requestCount++;
+						}
+					}
+					fileReader.close();
+					numberOfRequestPerDayMap.put(dateCreated, requestCount);
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return numberOfRequestPerDayMap;
+	}
+
+	public static <K, V extends Comparable<? super V>> Map<K, V> sortByDateKey(Map<K, V> map) {
+		List<Map.Entry<K, V>> list = new LinkedList<Entry<K, V>>(map.entrySet());
+		Collections.sort(list, new Comparator<Map.Entry<K, V>>() {
+			public int compare(Map.Entry<K, V> o1, Map.Entry<K, V> o2) {
+				return ((Date) o1.getKey()).compareTo((Date) o2.getKey());
+			}
+		});
+
+		Map<K, V> result = new LinkedHashMap<K, V>();
+		for (Map.Entry<K, V> entry : list) {
+			result.put(entry.getKey(), entry.getValue());
+		}
+		return result;
+	}
+
 	public static <K, V extends Comparable<? super V>> Map<K, V> sortByValue(Map<K, V> map) {
 		List<Map.Entry<K, V>> list = new LinkedList<Entry<K, V>>(map.entrySet());
 		Collections.sort(list, new Comparator<Map.Entry<K, V>>() {
@@ -322,6 +388,7 @@ public class GenericUtil {
 			result.put(entry.getKey(), entry.getValue());
 		}
 		return result;
+
 	}
 
 }
