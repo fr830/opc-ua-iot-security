@@ -46,7 +46,8 @@ public class ChartExample {
 			Set<String> countryList = countryMap.keySet();
 			int i = 0;
 			for (String countryName : countryList) {
-				if (i < 10) {
+				if (i < 15) {
+					System.out.println(countryName+","+countryMap.get(countryName));
 					pieChartData.add(new PieChart.Data(countryName, countryMap.get(countryName)));
 					i++;
 				} else {
@@ -55,7 +56,7 @@ public class ChartExample {
 			}
 
 			PieChart chart = new PieChart(pieChartData);
-			chart.setTitle("Top 10 country");
+			chart.setTitle("Top 15 countries");
 			// chart.setLabelLineLength(150);
 			chart.setLabelsVisible(false);
 			chart.setLegendSide(Side.LEFT);
@@ -63,7 +64,7 @@ public class ChartExample {
 			Scene scene = new Scene(new Group());
 			((Group) scene.getRoot()).getChildren().add(chart);
 
-			stage.setTitle("Top 10 country hits");
+			stage.setTitle("Top 15 countries");
 			// stage.setWidth(500);
 			// stage.setHeight(500);
 			// stage.setFullScreen(true);
@@ -81,16 +82,16 @@ public class ChartExample {
 
 		@Override
 		public void start(Stage stage) {
-			stage.setTitle("# Reqests based on continent");
+			stage.setTitle("Numebr of reqests based on continent");
 			final CategoryAxis xAxis = new CategoryAxis();
 			final NumberAxis yAxis = new NumberAxis();
 			final BarChart<String, Number> bc = new BarChart<String, Number>(xAxis, yAxis);
 			
 			bc.setBarGap(-50);
 			
-			bc.setTitle("# Reqests based on continent");
+			bc.setTitle("Numebr of reqests based on continent");
 			xAxis.setLabel("Country");
-			yAxis.setLabel("# Number of Requests");
+			yAxis.setLabel("Number of requests");
 
 			HashMap<String, HashMap<String, Integer>> continentCountryMap = GenericUtil
 					.extractContinentCountryMapFromLogs();
@@ -130,14 +131,14 @@ public class ChartExample {
 
 		@Override
 		public void start(Stage stage) {
-			stage.setTitle("Maximum # Requests per user (or per IP address)");
+			stage.setTitle("Number requests per user (or per IP address)");
 			final CategoryAxis xAxis = new CategoryAxis();
 			final NumberAxis yAxis = new NumberAxis();
 			final BarChart<String, Number> bc = new BarChart<String, Number>(xAxis, yAxis);
 
-			bc.setTitle("Maximum # Requests per user (or per IP address)");
+			bc.setTitle("Number requests per user (or per IP address)");
 			xAxis.setLabel("IP Address");
-			yAxis.setLabel("# Number of Requests/IPAddress");
+			yAxis.setLabel("Number of requests");
 
 			HashMap<String, Integer> ipRequestCountMap = GenericUtil.extractIpRequestCountMapFromLogs();
 			ipRequestCountMap = (HashMap<String, Integer>) GenericUtil.sortByValue(ipRequestCountMap);
@@ -147,7 +148,7 @@ public class ChartExample {
 			Set<String> ipList = ipRequestCountMap.keySet();
 			int i = 0;
 			for (String ip : ipList) {
-				if (i < 10) {
+				if (i < 15) {
 					series.getData().add(new XYChart.Data(ip, ipRequestCountMap.get(ip)));
 					i++;
 				} else {
