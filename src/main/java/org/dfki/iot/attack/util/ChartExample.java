@@ -7,24 +7,25 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Set;
 
-import org.apache.http.util.CharsetUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.geometry.Insets;
 import javafx.geometry.Side;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.chart.BarChart;
 import javafx.scene.chart.CategoryAxis;
+import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.PieChart;
 import javafx.scene.chart.XYChart;
-import javafx.scene.layout.FlowPane;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
-import javafx.scene.chart.LineChart;
 
 public class ChartExample {
 
@@ -64,9 +65,13 @@ public class ChartExample {
 
 			PieChart chart = new PieChart(pieChartData);
 			chart.setTitle("Top 15 countries");
-			// chart.setLabelLineLength(150);
-			chart.setLabelsVisible(false);
+			chart.setLabelLineLength(50);
+			chart.setLabelsVisible(true);
 			chart.setLegendSide(Side.LEFT);
+			// chart.autosize();
+			chart.setPrefHeight(700.0);
+			chart.setPrefWidth(700.0);
+			chart.setPadding(new Insets(10, 0, 0, 40));
 
 			Scene scene = new Scene(new Group());
 			((Group) scene.getRoot()).getChildren().add(chart);
@@ -90,16 +95,20 @@ public class ChartExample {
 		@Override
 		public void start(Stage stage) {
 			stage.setTitle("Numebr of reqests based on continent");
-			final CategoryAxis xAxis = new CategoryAxis();
-			xAxis.setTickLabelRotation(90);
 
-			final NumberAxis yAxis = new NumberAxis();
-			final BarChart<String, Number> bc = new BarChart<String, Number>(xAxis, yAxis);
-			bc.autosize();
-			// bc.setBarGap(-50);
-			bc.setTitle("Numebr of reqests based on continent");
-			xAxis.setLabel("Country");
+			Font font = Font.font(null, FontWeight.BOLD, 15);
+
+			CategoryAxis xAxis = new CategoryAxis();
+			xAxis.setTickLabelFont(font);
+			xAxis.setLabel("Countries");
+
+			NumberAxis yAxis = new NumberAxis();
+			yAxis.setTickLabelFont(font);
 			yAxis.setLabel("Number of requests");
+
+			final BarChart<String, Number> chart = new BarChart<String, Number>(xAxis, yAxis);
+			chart.setBarGap(-30);
+			chart.setTitle("Number of reqests based on continent");
 
 			HashMap<String, HashMap<String, Integer>> continentCountryMap = GenericUtil
 					.extractContinentCountryMapFromLogs();
@@ -121,11 +130,11 @@ public class ChartExample {
 						break;
 					}
 				}
-				bc.getData().add(series);
+				chart.getData().add(series);
 
 			}
 
-			Scene scene = new Scene(bc);
+			Scene scene = new Scene(chart);
 			stage.setScene(scene);
 			stage.show();
 		}
@@ -140,18 +149,24 @@ public class ChartExample {
 		@Override
 		public void start(Stage stage) {
 			stage.setTitle("Number requests per user (or per IP address)");
-			final CategoryAxis xAxis = new CategoryAxis();
-			final NumberAxis yAxis = new NumberAxis();
-			final BarChart<String, Number> bc = new BarChart<String, Number>(xAxis, yAxis);
+			Font font = Font.font(null, FontWeight.BOLD, 15);
 
-			bc.setTitle("Number requests per user (or per IP address)");
-			xAxis.setLabel("IP Address");
+			CategoryAxis xAxis = new CategoryAxis();
+			xAxis.setTickLabelFont(font);
+			// xAxis.setLabel("IP Address");
+
+			final NumberAxis yAxis = new NumberAxis();
+			yAxis.setTickLabelFont(font);
 			yAxis.setLabel("Number of requests");
+
+			final BarChart<String, Number> bc = new BarChart<String, Number>(xAxis, yAxis);
+			bc.setTitle("Number requests per user (or per IP address)");
 
 			HashMap<String, Integer> ipRequestCountMap = GenericUtil.extractIpRequestCountMapFromLogs();
 			ipRequestCountMap = (HashMap<String, Integer>) GenericUtil.sortByValue(ipRequestCountMap);
 
 			XYChart.Series series = new XYChart.Series();
+			series.setName("IP Address");
 
 			Set<String> ipList = ipRequestCountMap.keySet();
 			int i = 0;
@@ -184,7 +199,7 @@ public class ChartExample {
 			final CategoryAxis xAxis = new CategoryAxis();
 			xAxis.setTickLabelRotation(90);
 			final NumberAxis yAxis = new NumberAxis();
-			//xAxis.setLabel("Days of Month");
+			// xAxis.setLabel("Days of Month");
 			// creating the chart
 			final LineChart<String, Number> lineChart = new LineChart<String, Number>(xAxis, yAxis);
 
@@ -195,7 +210,7 @@ public class ChartExample {
 			// populating the series with data
 
 			DateFormat df = new SimpleDateFormat("dd-MMM-yy");
-			
+
 			HashMap<Date, Integer> value = GenericUtil.getNumberOfRequestPerDayFromLogs();
 			value = (HashMap<Date, Integer>) GenericUtil.sortByDateKey(value);
 

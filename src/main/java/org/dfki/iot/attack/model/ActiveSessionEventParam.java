@@ -9,6 +9,7 @@ public class ActiveSessionEventParam {
 	private String sessionId;
 	private String authenToken;
 	private String userName;
+	private String password;
 	private String ipAddress;
 	private int port;
 
@@ -40,6 +41,14 @@ public class ActiveSessionEventParam {
 		this.userName = userName;
 	}
 
+	public String getPassword() {
+		return password;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
+	}
+
 	public String getIpAddress() {
 		return ipAddress;
 	}
@@ -62,6 +71,7 @@ public class ActiveSessionEventParam {
 		int result = 1;
 		result = prime * result + ((authenToken == null) ? 0 : authenToken.hashCode());
 		result = prime * result + ((ipAddress == null) ? 0 : ipAddress.hashCode());
+		result = prime * result + ((password == null) ? 0 : password.hashCode());
 		result = prime * result + port;
 		result = prime * result + ((sessionId == null) ? 0 : sessionId.hashCode());
 		result = prime * result + ((userName == null) ? 0 : userName.hashCode());
@@ -87,6 +97,11 @@ public class ActiveSessionEventParam {
 				return false;
 		} else if (!ipAddress.equals(other.ipAddress))
 			return false;
+		if (password == null) {
+			if (other.password != null)
+				return false;
+		} else if (!password.equals(other.password))
+			return false;
 		if (port != other.port)
 			return false;
 		if (sessionId == null) {
@@ -105,21 +120,24 @@ public class ActiveSessionEventParam {
 	@Override
 	public String toString() {
 		return "ActiveSessionEventParam [sessionId=" + sessionId + ", authenToken=" + authenToken + ", userName="
-				+ userName + ", ipAddress=" + ipAddress + ", port=" + port + "]";
+				+ userName + ", password=" + password + ", ipAddress=" + ipAddress + ", port=" + port + "]";
 	}
 
 	/**
 	 * @param sessionId
 	 * @param authenToken
 	 * @param userName
+	 * @param password
 	 * @param ipAddress
 	 * @param port
 	 */
-	public ActiveSessionEventParam(String sessionId, String authenToken, String userName, String ipAddress, int port) {
+	public ActiveSessionEventParam(String sessionId, String authenToken, String userName, String password,
+			String ipAddress, int port) {
 		super();
 		this.sessionId = sessionId;
 		this.authenToken = authenToken;
 		this.userName = userName;
+		this.password = password;
 		this.ipAddress = ipAddress;
 		this.port = port;
 	}

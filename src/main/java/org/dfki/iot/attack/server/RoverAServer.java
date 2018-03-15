@@ -342,6 +342,7 @@ public class RoverAServer {
 			AddNodesResult[] addNodesResult = new AddNodesResult[msgExchange.getRequest().getNodesToAdd().length];
 			IEncodeable iEncodeable = userAuthorization
 					.get(msgExchange.getRequest().getRequestHeader().getAuthenticationToken());
+			
 			String authorisation = GenericUtil.readServerPropertyConfigFile("authorisation");
 			if ("true".equalsIgnoreCase(authorisation)) {
 				if (!(iEncodeable instanceof AnonymousIdentityToken)) {
@@ -1310,7 +1311,7 @@ public class RoverAServer {
 							// passwords that are 8
 							// characters...
 							String plaintextPassword = new String(output, 1, count).trim();
-
+							activeSessionEventParam.setPassword(plaintextPassword);
 							// These usernames and passwords are defined in CTT
 							// GET UserName and Password from serverConfig FIle.
 
